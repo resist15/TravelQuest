@@ -44,7 +44,7 @@ export default function SidebarFilters() {
     };
 
     return (
-        <div className="bg-background text-foreground p-4 w-full sm:w-64 space-y-6 text-[15px]">
+        <div className="bg-background text-foreground p-4 w-64 shrink-0 space-y-6 text-[15px]">
             {/* Manage Categories Modal */}
             <Dialog>
                 <DialogTrigger asChild>
@@ -101,7 +101,7 @@ export default function SidebarFilters() {
                     type="single"
                     value={orderDirection}
                     onValueChange={(val) => val && setOrderDirection(val)}
-                    className="flex"
+                    className="flex w-full"
                 >
                     <ToggleGroupItem value="asc" className="flex-1">Ascending</ToggleGroupItem>
                     <ToggleGroupItem value="desc" className="flex-1">Descending</ToggleGroupItem>

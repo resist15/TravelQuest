@@ -44,7 +44,7 @@ export default function AdventuresPage() {
   return (
     <div className="flex flex-col lg:flex-row bg-background min-h-screen text-foreground">
       {/* Sidebar: visible on large screens */}
-      <aside className="hidden lg:block lg:w-64 border-r border-border">
+      <aside className="hidden lg:block lg:w-64">
         <SidebarFilter />
       </aside>
 
