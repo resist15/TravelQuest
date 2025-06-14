@@ -17,7 +17,7 @@ export default function AdventureMap({ coordinates }: AdventureMapProps) {
 
     const map = new maplibregl.Map({
       container: mapRef.current,
-      style: "https://api.maptiler.com/maps/streets/style.json?key=",
+      style: "https://api.maptiler.com/maps/streets/style.json?key=hCWgkMCmHCAFZw9YCnLa",
       center: coordinates,
       zoom: 12,
       interactive: false, // make it read-only

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  AtSign,
   Compass,
   Layers,
   Globe,
@@ -21,9 +22,9 @@ export default function Navbar() {
   const navLinks = [
     { href: "/adventures", icon: <Compass className="w-4 h-4" />, label: "Adventures" },
     { href: "/collections", icon: <Layers className="w-4 h-4" />, label: "Collections" },
-    { href: "/world", icon: <Globe className="w-4 h-4" />, label: "World Travel" },
     { href: "/map", icon: <Map className="w-4 h-4" />, label: "Map" },
     { href: "/calendar", icon: <Calendar className="w-4 h-4" />, label: "Calendar" },
+    { href: "/aboutus", icon: <AtSign className="w-4 h-4" />, label: "About Us" },
   ];
 
   return (

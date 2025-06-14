@@ -36,7 +36,7 @@ export default function AddAdventureDialog() {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: "https://api.maptiler.com/maps/streets/style.json?key=",
+      style: "https://api.maptiler.com/maps/streets/style.json?key=hCWgkMCmHCAFZw9YCnLa",
       center: [78.9629, 20.5937],
       zoom: 4,
     });

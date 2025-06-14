@@ -100,7 +100,7 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="p-4 space-y-2">
+                <div className="pt-0 px-4 pb-4 space-y-2">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">{adv.name}</h3>
                     {adv.status && (
