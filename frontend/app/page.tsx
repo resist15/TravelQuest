@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Navbar from "./components/Navbar";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +9,12 @@ import {
   MapPin,
   Building2,
 } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
 
 export default function Home() {
   const adventures = [
@@ -16,7 +24,8 @@ export default function Home() {
       location: "Mar del Plata, Buenos Aires, AR",
       tags: ["General 🌍", "Planned", "Private"],
       status: "planned",
-      image: null,
+      image:
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: 2,
@@ -24,7 +33,8 @@ export default function Home() {
       location: "Hawai‘i County, Hawaii, US",
       tags: ["General 🌍", "Planned", "Private"],
       status: "planned",
-      image: null,
+      image:
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
     },
     {
       id: 3,
@@ -32,7 +42,8 @@ export default function Home() {
       location: "Tulare County, California, US",
       tags: ["National Park 🌍", "Visited", "Private"],
       status: "visited",
-      image: null,
+      image:
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
       visitCount: 1,
       keywords: ["trees", "california"],
     },
@@ -43,6 +54,7 @@ export default function Home() {
       <main className="px-6 py-4 max-w-7xl mx-auto">
         <h1 className="text-2xl font-semibold mb-6">Welcome back, Demo!</h1>
 
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-muted rounded-xl p-4 flex flex-col justify-center">
             <p className="text-3xl font-bold text-pink-500">14</p>
@@ -70,52 +82,61 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Adventures */}
         <section className="mb-12">
           <h2 className="text-xl font-semibold mb-4">Recent Adventures</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {adventures.map((adv) => (
-              <div
+              <Card
                 key={adv.id}
-                className="bg-muted rounded-xl overflow-hidden shadow-sm"
+                className="overflow-hidden hover:shadow-xl transition-shadow cursor-pointer p-0"
               >
-                {adv.image ? (
-                  <Image
+                <div className="relative h-48 w-full overflow-hidden">
+                  <img
                     src={adv.image}
                     alt={adv.name}
-                    width={600}
-                    height={200}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-full object-cover"
                   />
-                ) : (
-                  <div className="h-48 bg-gradient-to-r from-green-400 to-blue-400 flex items-center justify-center text-sm text-white">
-                    No image found
-                  </div>
-                )}
+                </div>
+
                 <div className="p-4 space-y-2">
-                  <h3 className="text-lg font-semibold">{adv.name}</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">{adv.name}</h3>
+                    {adv.status && (
+                      <Badge
+                        className={
+                          adv.status === "planned"
+                            ? "bg-green-500 text-white"
+                            : "bg-blue-600 text-white"
+                        }
+                      >
+                        {adv.status}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">📍 {adv.location}</p>
+                  {adv.visitCount && (
+                    <p className="text-sm text-muted-foreground">
+                      🗓️ {adv.visitCount} Visit
+                    </p>
+                  )}
+
                   <div className="flex flex-wrap gap-1">
                     {adv.tags.map((tag, idx) => (
                       <Badge
                         key={idx}
-                        className={
-                          tag.includes("Planned")
-                            ? "bg-green-500 text-white"
-                            : tag.includes("Private")
-                            ? "bg-pink-500 text-white"
-                            : "bg-blue-600 text-white"
-                        }
+                        variant="outline"
+                        className="text-xs border-muted-foreground"
                       >
                         {tag}
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-sm text-muted-foreground">📍 {adv.location}</p>
-                  {adv.visitCount && (
-                    <p className="text-sm text-muted-foreground">🗓️ {adv.visitCount} Visit</p>
-                  )}
+
                   {adv.keywords && (
-                    <div className="flex flex-wrap gap-1 text-xs">
+                    <div className="flex flex-wrap gap-1 text-xs pt-1">
                       {adv.keywords.map((kw, i) => (
                         <span
                           key={i}
@@ -127,7 +148,7 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         </section>

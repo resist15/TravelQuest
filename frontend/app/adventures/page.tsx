@@ -1,5 +1,6 @@
 import SidebarFilter from "@/components/SidebarFilter";
 import AdventureCard from "@/components/AdventureCard";
+import AddAdventureButton from "@/components/AddAdventureDialog";
 
 const adventures = [
   {
@@ -27,7 +28,7 @@ const adventures = [
 
 export default function AdventuresPage() {
   return (
-    <div className="flex bg-black min-h-screen text-foreground">
+    <div className="flex bg-background min-h-screen text-foreground">
       <SidebarFilter />
 
       <main className="flex-1 p-6">
@@ -40,6 +41,7 @@ export default function AdventuresPage() {
           ))}
         </div>
       </main>
+      <AddAdventureButton/>
     </div>
   );
 }
