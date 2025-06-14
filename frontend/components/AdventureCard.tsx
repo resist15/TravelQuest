@@ -1,6 +1,17 @@
 import Image from "next/image";
 
-export default function AdventureCard({ adventure }) {
+type Adventure = {
+  name: string;
+  image?: string | null; // ← allow null as well
+  tags: string[];
+  location: string;
+};
+
+type AdventureCardProps = {
+  adventure: Adventure;
+};
+
+export default function AdventureCard({ adventure }: AdventureCardProps) {
   return (
     <div className="bg-card rounded-lg shadow-sm overflow-hidden">
       {adventure.image ? (
@@ -19,7 +30,7 @@ export default function AdventureCard({ adventure }) {
       <div className="p-4 space-y-2">
         <h3 className="text-lg font-semibold">{adventure.name}</h3>
         <div className="flex flex-wrap gap-1 text-xs">
-          {adventure.tags.map((tag, idx) => (
+          {adventure.tags.map((tag: string, idx: number) => (
             <span key={idx} className="px-2 py-0.5 rounded-full bg-secondary">
               {tag}
             </span>

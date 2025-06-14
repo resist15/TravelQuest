@@ -116,7 +116,6 @@ export default function CreateCollectionDialog() {
               />
               <Input
                 placeholder="Location"
-                icon={<MapPin className="w-4 h-4" />}
                 value={formData.location}
                 onChange={(e) =>
                   setFormData((prev) => ({
