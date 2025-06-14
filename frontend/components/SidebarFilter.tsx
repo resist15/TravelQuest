@@ -101,7 +101,7 @@ export default function SidebarFilters() {
                     type="single"
                     value={orderDirection}
                     onValueChange={(val) => val && setOrderDirection(val)}
-                    className="flex gap-2"
+                    className="flex"
                 >
                     <ToggleGroupItem value="asc" className="flex-1">Ascending</ToggleGroupItem>
                     <ToggleGroupItem value="desc" className="flex-1">Descending</ToggleGroupItem>
