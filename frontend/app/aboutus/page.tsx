@@ -10,7 +10,7 @@ const team = [
         name: "Sourav Jagtap",
         role: "Core-Member",
         bio: "I don't know how it works but it just works.",
-        image: "https://ui-avatars.com/api/?name=Sourav+Jagtap",
+        image: "./avatars/sourav.webp",
     },
     {
         name: "Mitray Pandit",
@@ -21,8 +21,8 @@ const team = [
     {
         name: "Devika Dixit",
         role: "Core-Member",
-        bio: "",
-        image: "https://ui-avatars.com/api/?name=Devika+Dixit",
+        bio: "You gotta do what you gotta do 乁(ツ)ㄏ",
+        image: "./avatars/devika.jpg",
     },
     {
         name: "Ketaki Pawar",
