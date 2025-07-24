@@ -23,105 +23,132 @@ export default function AddAdventureDialog() {
   const markerRef = useRef<maplibregl.Marker | null>(null);
 
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
-
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [rating, setRating] = useState(0);
   const [link, setLink] = useState("");
   const [description, setDescription] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Initialize the map
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+useEffect(() => {
+  if (!dialogOpen || !mapContainerRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: "https://api.maptiler.com/maps/streets/style.json?key=hCWgkMCmHCAFZw9YCnLa",
-      center: [78.9629, 20.5937],
-      zoom: 4,
-    });
+  const map = new maplibregl.Map({
+    container: mapContainerRef.current,
+    style: "https://api.maptiler.com/maps/streets/style.json?key=hCWgkMCmHCAFZw9YCnLa",
+    center: [78.9629, 20.5937],
+    zoom: 4,
+  });
 
-    map.addControl(new maplibregl.NavigationControl(), "top-right");
+  mapRef.current = map;
 
-    map.on("click", (e) => {
-      const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-      setSelectedLocation(coords);
+  const observer = new ResizeObserver(() => {
+    map.resize();
+  });
 
-      if (markerRef.current) {
-        markerRef.current.remove();
-      }
+  observer.observe(mapContainerRef.current);
 
-      markerRef.current = new maplibregl.Marker().setLngLat(coords).addTo(map);
-    });
+  return () => {
+    map.remove();
+    mapRef.current = null;
+    observer.disconnect();
+  };
+}, [dialogOpen]);
 
-    mapRef.current = map;
 
-    return () => map.remove();
-  }, []);
+  const placeMarker = (coords: [number, number], map: maplibregl.Map) => {
+    if (markerRef.current) markerRef.current.remove();
+    markerRef.current = new maplibregl.Marker().setLngLat(coords).addTo(map);
+  };
 
-  // Use browser location
   const handleUseCurrentLocation = () => {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-      setSelectedLocation(coords);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        setSelectedLocation(coords);
 
-      if (mapRef.current) {
-        mapRef.current.flyTo({ center: coords, zoom: 12 });
-
-        if (markerRef.current) {
-          markerRef.current.remove();
+        if (mapRef.current) {
+          mapRef.current.flyTo({ center: coords, zoom: 12 });
+          placeMarker(coords, mapRef.current);
         }
-
-        markerRef.current = new maplibregl.Marker().setLngLat(coords).addTo(mapRef.current);
+      },
+      () => {
+        toast.error("Unable to access location.");
       }
-    });
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!name || !category || !selectedLocation) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
-    const data = {
+    const [lng, lat] = selectedLocation;
+    const adventurePayload = {
       name,
-      category,
-      rating,
-      link,
       description,
-      location: {
-        type: "Point",
-        coordinates: selectedLocation,
-      },
+      link,
+      location: `${lat},${lng}`,
+      latitude: lat,
+      longitude: lng,
+      rating,
+      tags: [category],
     };
 
+    const formData = new FormData();
+    formData.append(
+      "data",
+      new Blob([JSON.stringify(adventurePayload)], {
+        type: "application/json",
+      })
+    );
+
     try {
-      const res = await fetch("/api/adventures", {
+      const res = await fetch("http://localhost:8080/api/adventures", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
+        },
+        body: formData,
       });
 
-      if (!res.ok) throw new Error("Failed to add adventure");
+      if (!res.ok) throw new Error("Failed to create adventure");
+      toast.success("Adventure added!");
 
-      toast.success("Adventure added successfully!");
-      // Optionally reset form here
+      resetForm();
+      setDialogOpen(false);
     } catch (err) {
       console.error(err);
       toast.error("Error adding adventure.");
     }
   };
 
+  const resetForm = () => {
+    setName("");
+    setCategory("");
+    setRating(0);
+    setLink("");
+    setDescription("");
+    setSelectedLocation(null);
+    if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <Dialog>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogTrigger asChild>
-          <Button
-            variant="default"
-            className="rounded-full px-6 py-3 text-sm font-medium shadow-lg bg-primary text-primary-foreground"
-          >
+          <Button className="rounded-full px-6 py-3 text-sm font-medium shadow-lg bg-primary text-primary-foreground">
             + Add Adventure
           </Button>
         </DialogTrigger>
@@ -185,7 +212,11 @@ export default function AddAdventureDialog() {
                 )}
               </div>
 
-              <div ref={mapContainerRef} className="w-full h-64 rounded border" />
+              <div
+                ref={mapContainerRef}
+                className="w-full h-64 rounded border"
+                style={{ minHeight: "256px" }} // fallback height
+              />
             </div>
 
             <Button type="submit" className="w-full mt-4">

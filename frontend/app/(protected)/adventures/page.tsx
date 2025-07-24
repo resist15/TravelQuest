@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SidebarFilter from "@/components/SidebarFilter";
 import AdventureCard from "@/components/AdventureCard";
 import AddAdventureButton from "@/components/AddAdventureDialog";
@@ -13,33 +13,35 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
+import axios from "@/lib/axios";
 
-const adventures = [
-  {
-    id: 1,
-    name: "Mar del Plata",
-    location: "Mar del Plata, Buenos Aires, AR",
-    tags: ["General 🌍", "Planned", "Private"],
-    image: null,
-  },
-  {
-    id: 2,
-    name: "Hawai‘i County",
-    location: "Hawai‘i County, Hawaii, US",
-    tags: ["General 🌍", "Planned", "Private"],
-    image: null,
-  },
-  {
-    id: 3,
-    name: "Sequoia National Park",
-    location: "Tulare County, California, US",
-    tags: ["National Park 🌍", "Visited", "Private"],
-    image: null,
-  },
-];
+interface Adventure {
+  id: number;
+  name: string;
+  location: string;
+  tags: string[];
+  imageUrls: string[];
+}
 
 export default function AdventuresPage() {
+  const [adventures, setAdventures] = useState<Adventure[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdventures = async () => {
+      try {
+        const response = await axios.get<Adventure[]>("/api/adventures");
+        setAdventures(response.data);
+      } catch (err) {
+        console.error("Failed to load adventures", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdventures();
+  }, []);
 
   return (
     <div className="flex flex-col lg:flex-row bg-background min-h-screen text-foreground">
@@ -75,15 +77,21 @@ export default function AdventuresPage() {
         <div className="hidden lg:block mb-6">
           <h1 className="text-2xl font-bold">My Adventures</h1>
           <p className="text-muted-foreground text-sm">
-            8 results matching your search
+            {adventures.length} result{adventures.length !== 1 && "s"} matching your search
           </p>
         </div>
 
         {/* Adventures grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {adventures.map((adv) => (
-            <AdventureCard key={adv.id} adventure={adv} />
-          ))}
+          {loading ? (
+            <p>Loading adventures...</p>
+          ) : adventures.length === 0 ? (
+            <p>No adventures found.</p>
+          ) : (
+            adventures.map((adv) => (
+              <AdventureCard key={adv.id} adventure={adv} />
+            ))
+          )}
         </div>
       </main>
 
