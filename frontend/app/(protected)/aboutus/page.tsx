@@ -15,8 +15,8 @@ const team = [
     {
         name: "Mitray Pandit",
         role: "Core-Member",
-        bio: "",
-        image: "https://ui-avatars.com/api/?name=Mitray+Pandit",
+        bio: "Fall seven times, stand up eight.",
+        image: "./avatars/mitray.jpeg",
     },
     {
         name: "Devika Dixit",
@@ -27,7 +27,7 @@ const team = [
     {
         name: "Ketaki Pawar",
         role: "Core-Member",
-        bio: "",
+        bio: "Be kind",
         image: "https://ui-avatars.com/api/?name=Ketaki+Pawar",
     },
     {
