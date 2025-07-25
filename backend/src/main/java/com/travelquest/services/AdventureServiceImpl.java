@@ -2,7 +2,7 @@ package com.travelquest.services;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Coordinate;
@@ -146,6 +146,9 @@ public class AdventureServiceImpl implements AdventureService {
     }
 
     private void uploadImages(List<MultipartFile> images, Long userId, Adventure adventure) {
+        if (images == null || images.isEmpty()) {
+            return; // No images to upload
+        }
         for (MultipartFile image : images) {
             try {
                 String url = cloudinaryService.uploadImage(image, userId.toString(), adventure.getId().toString());
@@ -161,6 +164,26 @@ public class AdventureServiceImpl implements AdventureService {
         }
     }
 
+//    private AdventureDTO toDTO(Adventure adventure) {
+//        return AdventureDTO.builder()
+//                .id(adventure.getId())
+//                .name(adventure.getName())
+//                .location(adventure.getLocation())
+//                .latitude(adventure.getGeoPoint().getY())
+//                .longitude(adventure.getGeoPoint().getX())
+//                .tags(adventure.getTags())
+//                .rating(adventure.getRating())
+//                .description(adventure.getDescription())
+//                .link(adventure.getLink())
+//                .imageUrls(
+//                        adventure.getImages().stream()
+//                                .map(AdventureImage::getUrl)
+//                                .collect(Collectors.toList())
+//                )
+//                .build();
+//    }
+//    
+
     private AdventureDTO toDTO(Adventure adventure) {
         return AdventureDTO.builder()
                 .id(adventure.getId())
@@ -173,10 +196,12 @@ public class AdventureServiceImpl implements AdventureService {
                 .description(adventure.getDescription())
                 .link(adventure.getLink())
                 .imageUrls(
-                        adventure.getImages().stream()
-                                .map(AdventureImage::getUrl)
-                                .collect(Collectors.toList())
+                    Objects.requireNonNullElse(adventure.getImages(), List.<AdventureImage>of())
+                           .stream()
+                           .map(AdventureImage::getUrl)
+                           .collect(Collectors.toList())
                 )
                 .build();
     }
+    
 }
