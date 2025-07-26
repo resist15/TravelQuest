@@ -30,7 +30,7 @@ export default function RegisterPage() {
 
     try {
       const res = await axios.post("/api/users/register", form);
-      // localStorage.setItem("jwt", res.data.token);
+      localStorage.setItem("token", res.data.token);
       router.push("/login");
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Registration failed";

@@ -2,16 +2,20 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("jwt");
-    if (!token) {
-      router.replace("/login");
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
     }
-  }, [router]);
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || !isAuthenticated) return null;
 
   return <>{children}</>;
 }

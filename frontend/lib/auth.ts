@@ -1,5 +1,5 @@
 export function getToken(): string | null {
-  return localStorage.getItem("jwt");
+  return localStorage.getItem("token");
 }
 
 export function isLoggedIn(): boolean {
@@ -7,6 +7,6 @@ export function isLoggedIn(): boolean {
 }
 
 export function logout() {
-  localStorage.removeItem("jwt");
+  localStorage.removeItem("token");
   window.location.href = "/login";
 }

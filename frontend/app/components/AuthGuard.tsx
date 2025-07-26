@@ -11,7 +11,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("jwt");
+    const token = localStorage.getItem("token");
 
     if (!token && !PUBLIC_ROUTES.includes(pathname)) {
       router.replace("/login");

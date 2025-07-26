@@ -14,8 +14,8 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       const res = await axios.post("/api/auth/login", { email, password });
-      localStorage.setItem("jwt", res.data.token);
-      router.push("/dashboard");
+      localStorage.setItem("token", res.data.token);
+      router.push("/");
     } catch (err) {
       alert("Invalid login");
     }
