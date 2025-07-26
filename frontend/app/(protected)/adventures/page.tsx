@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import SidebarFilter from "@/components/SidebarFilter";
-import AdventureCard from "@/components/AdventureCard"; // This component will need internal updates
+import AdventureCard from "@/components/AdventureCard";
 import AddAdventureButton from "@/components/AddAdventureDialog";
 import {
   Drawer,
@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import axios from "@/lib/axios";
-import Link from "next/link"; // Import Link for navigation
+import Link from "next/link";
 
 interface Adventure {
   id: number;
@@ -28,24 +28,31 @@ interface Adventure {
 
 export default function AdventuresPage() {
   const [adventures, setAdventures] = useState<Adventure[]>([]);
+  const [page, setPage] = useState(0); // ✅ New: current page
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [locationName, setLocationName] = useState<string>("");
 
-  useEffect(() => {
-    const fetchAdventures = async () => {
-      try {
-        const response = await axios.get<Adventure[]>("/api/adventures");
-        setAdventures(response.data);
-      } catch (err) {
-        console.error("Failed to load adventures", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchAdventures = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get<Adventure[]>("/api/adventures/my", {
+        params: {
+          page,
+          size: 6, // ✅ New: 6 adventures per page
+        },
+      });
+      setAdventures(response.data);
+    } catch (err) {
+      console.error("Failed to load adventures", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
 
+  useEffect(() => {
     fetchAdventures();
-  }, []);
+  }, [fetchAdventures]);
 
   return (
     <div className="flex flex-col lg:flex-row bg-background min-h-screen text-foreground">
@@ -98,6 +105,26 @@ export default function AdventuresPage() {
               </Link>
             ))
           )}
+        </div>
+
+        {/* ✅ Pagination controls */}
+        <div className="flex justify-center mt-6 space-x-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
+            disabled={page === 0}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((prev) => prev + 1)}
+            disabled={adventures.length < 6}
+          >
+            Next
+          </Button>
         </div>
       </main>
 

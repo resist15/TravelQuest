@@ -61,7 +61,16 @@ public class AdventureController {
         List<AdventureDTO> list = adventureService.getAdventuresByUser(auth.getName());
         return ResponseEntity.ok(list);
     }
-
+    
+    @GetMapping("/my")
+    public ResponseEntity<List<AdventureDTO>> getAdventuresByUserPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            Authentication auth) {
+        List<AdventureDTO> paginatedAdventures = adventureService.getAdventuresByUserPaginated(auth.getName(), page, size);
+        return ResponseEntity.ok(paginatedAdventures);
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id) {
         return ResponseEntity.ok(adventureService.getAdventureById(id));
