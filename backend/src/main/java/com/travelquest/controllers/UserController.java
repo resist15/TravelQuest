@@ -6,6 +6,7 @@ import com.travelquest.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,8 +21,8 @@ public class UserController {
         return ResponseEntity.ok(userService.registerUser(userDto));
     }
 
-    @GetMapping("/email/{email}")
-    public ResponseEntity<UserResponseDTO> getByEmail(@PathVariable String email) {
-        return ResponseEntity.ok(userService.getUserByEmail(email));
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDTO> getByEmail(Authentication auth) {
+        return ResponseEntity.ok(userService.getUserByEmail(auth.getName()));
     }
 }
