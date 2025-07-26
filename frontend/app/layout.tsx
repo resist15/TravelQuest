@@ -5,8 +5,8 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "My App",
-  description: "App description",
+  title: "TravelQuest",
+  description: "TravelQuest is a full-stack travel logging platform that lets users record, organize, and explore their adventures on an interactive map",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
