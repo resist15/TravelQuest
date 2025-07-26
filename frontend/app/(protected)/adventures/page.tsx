@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import axios from "@/lib/axios";
+import Link from "next/link";
 
 interface Adventure {
   id: number;
@@ -97,7 +98,9 @@ export default function AdventuresPage() {
 
       {/* Floating Add Adventure Button for mobile */}
       <div className="fixed bottom-4 right-4 z-50 lg:static lg:bottom-auto lg:right-auto">
-        <AddAdventureButton />
+        <Link href="/adventures/new">
+          <Button>+ Add Adventure</Button>
+        </Link>
       </div>
     </div>
   );
