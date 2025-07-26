@@ -28,7 +28,7 @@ const team = [
         name: "Ketaki Pawar",
         role: "Core-Member",
         bio: "Be kind",
-        image: "https://ui-avatars.com/api/?name=Ketaki+Pawar",
+        image: "./avatars/ketaki.jpeg",
     },
     {
         name: "Geeta Pujari",
