@@ -201,7 +201,16 @@ public class AdventureServiceImpl implements AdventureService {
                            .map(AdventureImage::getUrl)
                            .collect(Collectors.toList())
                 )
+                .createdAt(adventure.getCreatedAt())
                 .build();
     }
+
+    //
+	@Override
+	public List<AdventureDTO> getRecentAdventures() {
+		return adventureRepository.findTopThreeByOrderByCreatedAtDesc().stream()
+	            .map(this::toDTO)
+	            .collect(Collectors.toList());
+	}
     
 }

@@ -12,4 +12,7 @@ import com.travelquest.entity.User;
 public interface AdventureRepository extends JpaRepository<Adventure, Long> {
     List<Adventure> findByUser(User user);
     Page<Adventure> findByUser(User user, Pageable pageable);
+    //
+    List<Adventure> findTopThreeByOrderByCreatedAtDesc();
+
 }

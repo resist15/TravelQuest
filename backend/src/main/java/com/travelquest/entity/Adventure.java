@@ -1,11 +1,28 @@
 package com.travelquest.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.locationtech.jts.geom.Point;
-
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.locationtech.jts.geom.Point;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "adventures")
@@ -37,4 +54,13 @@ public class Adventure {
 
     @OneToMany(mappedBy = "adventure", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AdventureImage> images = new ArrayList<>();
+    
+    //
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

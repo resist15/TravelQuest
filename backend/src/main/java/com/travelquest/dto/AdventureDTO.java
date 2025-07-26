@@ -3,6 +3,7 @@ package com.travelquest.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -18,4 +19,6 @@ public class AdventureDTO {
     private double latitude;
     private double longitude;
     private List<String> imageUrls;
+    //
+    private LocalDateTime createdAt;
 }

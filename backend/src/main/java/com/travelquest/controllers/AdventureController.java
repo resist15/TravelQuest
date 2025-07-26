@@ -66,4 +66,11 @@ public class AdventureController {
     public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id) {
         return ResponseEntity.ok(adventureService.getAdventureById(id));
     }
+    
+    //
+    @GetMapping("/recent")
+    public ResponseEntity<List<AdventureDTO>> getRecentAdventures() {
+        return ResponseEntity.ok(adventureService.getRecentAdventures());
+    }
+
 }

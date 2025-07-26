@@ -14,4 +14,6 @@ public interface AdventureService {
     List<AdventureDTO> getAdventuresByUser(String email);
     List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size);
     AdventureDTO getAdventureById(Long id);
+    //
+    List<AdventureDTO> getRecentAdventures();
 }
