@@ -109,7 +109,7 @@ useEffect(() => {
       const res = await fetch("http://localhost:8080/api/adventures", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
         },
         body: formData,
       });
