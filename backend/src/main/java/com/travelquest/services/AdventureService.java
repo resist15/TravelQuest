@@ -12,7 +12,7 @@ public interface AdventureService {
     void addImages(Long adventureId, List<MultipartFile> images, String email);
     void deleteImage(Long imageId, String email);
     List<AdventureDTO> getAdventuresByUser(String email);
-    List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size);
+    List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size,String name);
     AdventureDTO getAdventureById(Long id);
     //
     List<AdventureDTO> getRecentAdventures();

@@ -126,17 +126,33 @@ public class AdventureServiceImpl implements AdventureService {
                 .collect(Collectors.toList());
     }
 
+//    @Override
+//    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String name) {
+//        User user = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        Pageable pageable = PageRequest.of(page, size);
+//        Page<Adventure> result = adventureRepository.findByUser(user, pageable);
+//
+//        return result.stream().map(this::toDTO).collect(Collectors.toList());
+//    }
     @Override
-    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size) {
+    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String location) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Adventure> result = adventureRepository.findByUser(user, pageable);
+        Page<Adventure> result;
+
+        if (location != null && !location.trim().isEmpty()) {
+            result = adventureRepository.findByUserAndNameContainingIgnoreCase(user, location, pageable);
+        } else {
+            result = adventureRepository.findByUser(user, pageable);
+        }
 
         return result.stream().map(this::toDTO).collect(Collectors.toList());
     }
-
+    
     @Override
     public AdventureDTO getAdventureById(Long id) {
         Adventure adventure = adventureRepository.findById(id)

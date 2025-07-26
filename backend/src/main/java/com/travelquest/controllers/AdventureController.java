@@ -62,13 +62,25 @@ public class AdventureController {
         return ResponseEntity.ok(list);
     }
     
+//    @GetMapping("/my")
+//    public ResponseEntity<List<AdventureDTO>> getAdventuresByUserPaginated(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "6") int size,
+//            @RequestParam String name,
+//            Authentication auth) {
+//        List<AdventureDTO> paginatedAdventures = adventureService.getAdventuresByUserPaginated(auth.getName(), page, size);
+//        return ResponseEntity.ok(paginatedAdventures);
+//    }
     @GetMapping("/my")
-    public ResponseEntity<List<AdventureDTO>> getAdventuresByUserPaginated(
+    public ResponseEntity<List<AdventureDTO>> getMyAdventures(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int size,
+            @RequestParam(required = false) String name,
             Authentication auth) {
-        List<AdventureDTO> paginatedAdventures = adventureService.getAdventuresByUserPaginated(auth.getName(), page, size);
-        return ResponseEntity.ok(paginatedAdventures);
+        List<AdventureDTO> adventures = adventureService.getAdventuresByUserPaginated(
+            auth.getName(), page, size, name
+        );
+        return ResponseEntity.ok(adventures);
     }
     
     @GetMapping("/{id}")

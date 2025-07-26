@@ -14,5 +14,5 @@ public interface AdventureRepository extends JpaRepository<Adventure, Long> {
     Page<Adventure> findByUser(User user, Pageable pageable);
     //
     List<Adventure> findTopThreeByOrderByCreatedAtDesc();
-
+    Page<Adventure> findByUserAndNameContainingIgnoreCase(User user, String location, Pageable pageable);
 }
