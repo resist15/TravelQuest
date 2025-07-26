@@ -12,90 +12,55 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react"; // Import Search icon
 
-export default function SidebarFilters() {
-    const [orderDirection, setOrderDirection] = useState("asc");
-    const [visitedStatus, setVisitedStatus] = useState("All");
-    const [categories, setCategories] = useState([
-        { name: "Attraction", emoji: "🎢" },
-        { name: "Hill", emoji: "⛰️" },
-        { name: "National Park", emoji: "🌲" },
-    ]);
+interface SidebarFilterProps {
+    searchTerm: string;
+    onSearchChange: (term: string) => void;
+    onApplyFilters?: (filters: {
+        orderDirection: string;
+        orderBy: string;
+        visitedStatus: string;
+        categories: string[]; // Pass selected categories names
+        searchTerm: string;
+    }) => void;
+}
+
+export default function SidebarFilter({ searchTerm, onSearchChange, onApplyFilters }: SidebarFilterProps) {
+    const [orderDirection, setOrderDirection] = useState("desc"); // Default to desc for more recent items
+    const [orderBy, setOrderBy] = useState("updated"); // Default order by 'updated'
+    const [visitedStatus, setVisitedStatus] = useState("all"); // Changed "All" to "all" for consistency
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]); // To store names of selected categories
     const [newCategoryName, setNewCategoryName] = useState("");
     const [newCategoryEmoji, setNewCategoryEmoji] = useState("");
 
-    const handleAddCategory = () => {
-        if (
-            newCategoryName.trim() &&
-            newCategoryEmoji.trim() &&
-            !categories.some((c) => c.name === newCategoryName)
-        ) {
-            setCategories([
-                ...categories,
-                { name: newCategoryName.trim(), emoji: newCategoryEmoji.trim() },
-            ]);
-            setNewCategoryName("");
-            setNewCategoryEmoji("");
-        }
-    };
-
-    const handleRemove = (catName: string) => {
-        setCategories(categories.filter((c) => c.name !== catName));
+    const handleApplyFilters = () => {
+        onApplyFilters?.({
+            orderDirection,
+            orderBy,
+            visitedStatus,
+            categories: selectedCategories,
+            searchTerm,
+        });
     };
 
     return (
-        <div className="bg-background text-foreground p-4 w-64 shrink-0 space-y-6 text-[15px]">
-            {/* Manage Categories Modal */}
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button className="w-full bg-muted text-foreground" variant="outline">
-                        Manage Categories
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-background text-foreground max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Manage Categories</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-2">
-                        {categories.map((cat) => (
-                            <div
-                                key={cat.name}
-                                className="flex items-center justify-between bg-muted px-3 py-2 rounded"
-                            >
-                                <span>
-                                    {cat.emoji} {cat.name}
-                                </span>
-                                <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => handleRemove(cat.name)}
-                                >
-                                    Remove
-                                </Button>
-                            </div>
-                        ))}
-                        <div className="flex flex-wrap gap-2 pt-2">
-                            <Input
-                                placeholder="Emoji"
-                                className="w-16"
-                                value={newCategoryEmoji}
-                                onChange={(e) => setNewCategoryEmoji(e.target.value)}
-                            />
-                            <Input
-                                placeholder="New Category"
-                                className="flex-1"
-                                value={newCategoryName}
-                                onChange={(e) => setNewCategoryName(e.target.value)}
-                            />
-                            <Button onClick={handleAddCategory}>Add</Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Sort Order */}
+        <div className="bg-background text-foreground p-4 w-full shrink-0 space-y-6 text-[15px]">
             <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Sort</h2>
+                <h2 className="text-lg font-semibold">Search</h2>
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by location..."
+                        className="w-full pl-9"
+                        value={searchTerm}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <h2 className="text-lg font-semibold">Sort Order</h2>
                 <ToggleGroup
                     variant="outline"
                     type="single"
@@ -106,21 +71,40 @@ export default function SidebarFilters() {
                     <ToggleGroupItem value="asc" className="flex-1">Ascending</ToggleGroupItem>
                     <ToggleGroupItem value="desc" className="flex-1">Descending</ToggleGroupItem>
                 </ToggleGroup>
-
             </div>
 
-            {/* Order By */}
             <div className="space-y-2">
                 <h2 className="text-lg font-semibold">Order By</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
-                    <Toggle size="sm" variant="outline" className="w-full">Updated</Toggle>
-                    <Toggle size="sm" variant="outline" className="w-full">Name</Toggle>
-                    <Toggle size="sm" variant="outline" className="w-full">Date</Toggle>
-                    <Toggle size="sm" variant="outline" className="w-full">Rating</Toggle>
-                </div>
+                <ToggleGroup
+                    variant="outline"
+                    type="single"
+                    value={orderBy}
+                    onValueChange={(val) => val && setOrderBy(val)}
+                    className="grid grid-cols-2 sm:grid-cols-2 gap-2"
+                >
+                    <ToggleGroupItem value="updated" className="w-full">Updated</ToggleGroupItem>
+                    <ToggleGroupItem value="name" className="w-full">Name</ToggleGroupItem>
+                    <ToggleGroupItem value="date" className="w-full">Date</ToggleGroupItem>
+                    <ToggleGroupItem value="rating" className="w-full">Rating</ToggleGroupItem>
+                </ToggleGroup>
             </div>
 
-            <Button size="lg" className="w-full">Filter</Button>
+            <div className="space-y-2">
+                <h2 className="text-lg font-semibold">Status</h2>
+                <ToggleGroup
+                    variant="outline"
+                    type="single"
+                    value={visitedStatus}
+                    onValueChange={(val) => val && setVisitedStatus(val)}
+                    className="flex w-full"
+                >
+                    <ToggleGroupItem value="all" className="flex-1">All</ToggleGroupItem>
+                    <ToggleGroupItem value="visited" className="flex-1">Visited</ToggleGroupItem>
+                    <ToggleGroupItem value="planned" className="flex-1">Planned</ToggleGroupItem>
+                </ToggleGroup>
+            </div>
+
+            <Button size="lg" className="w-full" onClick={handleApplyFilters}>Apply Filters</Button>
         </div>
     );
 }

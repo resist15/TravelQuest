@@ -18,33 +18,33 @@ import ModeToggle from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import api from "@/lib/axios";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
-  const [userName, setUserName] = useState<string>('User');
+  const [userName, setUserName] = useState<string>("User");
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
     const fetchData = async () => {
       try {
-        JSON.parse(atob(token.split('.')[1])); // optional token validation
-        const [userRes] = await Promise.all([
-          api.get('/api/users/me', { headers: { Authorization: `Bearer ${token}` } }),
-        ]);
-
-        setUserName(userRes.data.name || 'User');
+        JSON.parse(atob(token.split(".")[1]));
+        const userRes = await api.get("/api/users/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUserName(userRes.data.name || "User");
       } catch (err: any) {
         console.error(err);
-        if (err.response?.status === 401) router.push('/login');
-      } finally {
+        if (err.response?.status === 401) router.push("/login");
       }
     };
+
     fetchData();
   }, [router]);
 
@@ -62,7 +62,12 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="w-full bg-background text-foreground border-b border-border">
+    <motion.nav
+      className="w-full bg-background text-foreground border-b border-border"
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+    >
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="text-xl font-bold flex items-center space-x-2">
@@ -73,9 +78,14 @@ export default function Navbar() {
         <div className="hidden md:flex items-center space-x-4">
           {navLinks.map(({ href, icon, label }) => (
             <Link key={href} href={href}>
-              <Button variant="ghost" className="flex gap-1 items-center">
-                {icon} {label}
-              </Button>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Button variant="ghost" className="flex gap-1 items-center">
+                  {icon} {label}
+                </Button>
+              </motion.div>
             </Link>
           ))}
         </div>
@@ -83,10 +93,12 @@ export default function Navbar() {
         {/* Avatar + ModeToggle + Logout */}
         <div className="flex items-center gap-3">
           <ModeToggle />
-          <Avatar>
-            <AvatarImage src="/avatar.png" alt="user" />
-            <AvatarFallback>{userName[0]}</AvatarFallback>
-          </Avatar>
+          <motion.div whileHover={{ scale: 1.1 }}>
+            <Avatar>
+              <AvatarImage src="/avatar.png" alt="user" />
+              <AvatarFallback>{userName[0]}</AvatarFallback>
+            </Avatar>
+          </motion.div>
           <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
             <LogOut className="w-5 h-5" />
           </Button>
@@ -102,20 +114,32 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Nav Links */}
-      {mobileOpen && (
-        <div className="md:hidden px-4 pb-4 space-y-2">
-          {navLinks.map(({ href, icon, label }) => (
-            <Link key={href} href={href} onClick={() => setMobileOpen(false)}>
-              <Button variant="ghost" className="w-full justify-start flex gap-2">
-                {icon} {label}
-              </Button>
-            </Link>
-          ))}
-          <Button variant="ghost" className="w-full justify-start flex gap-2" onClick={handleLogout}>
-            <LogOut className="w-4 h-4" /> Logout
-          </Button>
-        </div>
-      )}
-    </nav>
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            className="md:hidden px-4 pb-4 space-y-2"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {navLinks.map(({ href, icon, label }) => (
+              <Link key={href} href={href} onClick={() => setMobileOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start flex gap-2">
+                  {icon} {label}
+                </Button>
+              </Link>
+            ))}
+            <Button
+              variant="ghost"
+              className="w-full justify-start flex gap-2"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-4 h-4" /> Logout
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.nav>
   );
 }
