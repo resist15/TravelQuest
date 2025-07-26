@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SidebarFilter from "@/components/SidebarFilter";
-import AdventureCard from "@/components/AdventureCard";
+import AdventureCard from "@/components/AdventureCard"; // This component will need internal updates
 import AddAdventureButton from "@/components/AddAdventureDialog";
 import {
   Drawer,
@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import axios from "@/lib/axios";
-import Link from "next/link";
+import Link from "next/link"; // Import Link for navigation
 
 interface Adventure {
   id: number;
@@ -22,12 +22,15 @@ interface Adventure {
   location: string;
   tags: string[];
   imageUrls: string[];
+  latitude: number;
+  longitude: number;
 }
 
 export default function AdventuresPage() {
   const [adventures, setAdventures] = useState<Adventure[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [locationName, setLocationName] = useState<string>("");
 
   useEffect(() => {
     const fetchAdventures = async () => {
@@ -90,7 +93,9 @@ export default function AdventuresPage() {
             <p>No adventures found.</p>
           ) : (
             adventures.map((adv) => (
-              <AdventureCard key={adv.id} adventure={adv} />
+              <Link key={adv.id} href={`/adventures/${adv.id}`} passHref>
+                <AdventureCard adventure={adv} />
+              </Link>
             ))
           )}
         </div>
@@ -98,7 +103,7 @@ export default function AdventuresPage() {
 
       {/* Floating Add Adventure Button for mobile */}
       <div className="fixed bottom-4 right-4 z-50 lg:static lg:bottom-auto lg:right-auto">
-        <Link href="/adventures/new">
+        <Link href="/adventures/new" passHref>
           <Button>+ Add Adventure</Button>
         </Link>
       </div>

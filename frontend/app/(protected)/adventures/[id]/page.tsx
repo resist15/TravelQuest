@@ -170,7 +170,7 @@ export default function AdventureDetails() {
               className="text-4xl font-bold text-primary mb-1"
             />
           ) : (
-            <h1 className="text-4xl font-bold text-primary mb-1">{adventure.name}</h1>
+            <h1 className="text-4xl font-bold text-primary mb-1">✈️ {adventure.name}</h1>
           )}
           <p className="text-sm text-muted-foreground">
             Created at: {format(new Date(adventure.createdAt), "dd MMM yyyy, hh:mm a")}
@@ -215,7 +215,7 @@ export default function AdventureDetails() {
 
       <div className="flex justify-between items-center">
         <p className="text-muted-foreground">
-          {locationName}
+          📍🗺️ {locationName}
         </p>
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
