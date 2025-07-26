@@ -15,8 +15,38 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
+import api from "@/lib/axios";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+    const router = useRouter();
+    const [userName, setUserName] = useState<string>('User');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        JSON.parse(atob(token.split('.')[1]));
+        const [userRes] = await Promise.all([
+          api.get('/api/users/me', { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+
+        setUserName(userRes.data.name || 'User');
+      } catch (err: any) {
+        console.error(err);
+        if (err.response?.status === 401) router.push('/login');
+      } finally {
+      }
+    };
+    fetchData();
+  }, [router]);
+
   const adventures = [
     {
       id: 1,
@@ -47,12 +77,14 @@ export default function Home() {
       visitCount: 1,
       keywords: ["trees", "california"],
     },
+
+    
   ];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="px-6 py-4 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-semibold mb-6">Welcome back, Demo!</h1>
+        <h1 className="text-2xl font-semibold mb-6">Welcome back, {userName}!</h1>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

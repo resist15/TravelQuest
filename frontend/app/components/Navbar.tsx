@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AtSign,
   Compass,
@@ -17,10 +17,36 @@ import { useRouter } from "next/navigation";
 import ModeToggle from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import api from "@/lib/axios";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
+  const [userName, setUserName] = useState<string>('User');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        JSON.parse(atob(token.split('.')[1])); // optional token validation
+        const [userRes] = await Promise.all([
+          api.get('/api/users/me', { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+
+        setUserName(userRes.data.name || 'User');
+      } catch (err: any) {
+        console.error(err);
+        if (err.response?.status === 401) router.push('/login');
+      } finally {
+      }
+    };
+    fetchData();
+  }, [router]);
 
   const navLinks = [
     { href: "/adventures", icon: <Compass className="w-4 h-4" />, label: "Adventures" },
@@ -59,7 +85,7 @@ export default function Navbar() {
           <ModeToggle />
           <Avatar>
             <AvatarImage src="/avatar.png" alt="user" />
-            <AvatarFallback>U</AvatarFallback>
+            <AvatarFallback>{userName[0]}</AvatarFallback>
           </Avatar>
           <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
             <LogOut className="w-5 h-5" />
