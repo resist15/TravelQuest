@@ -181,7 +181,7 @@ export default function AdventureDetails() {
             variant="outline"
             onClick={() =>
               window.open(
-                `http://googleusercontent.com/maps.google.com/search?q=${adventure.latitude},${adventure.longitude}`,
+                `https://www.google.com/maps?q=${adventure.latitude},${adventure.longitude}`,
                 "_blank"
               )
             }
