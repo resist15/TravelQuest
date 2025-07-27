@@ -73,4 +73,14 @@ public class AdventureController {
         return ResponseEntity.ok(adventureService.getRecentAdventures());
     }
 
+    @GetMapping("/sortedBy")
+    public ResponseEntity<List<AdventureDTO>> getAdventuresSorted(
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String order,
+            Authentication auth
+    ) {
+        List<AdventureDTO> sorted = adventureService.getAdventuresSorted(auth.getName(), sortBy, order);
+        return ResponseEntity.ok(sorted);
+    }
+    //
 }
