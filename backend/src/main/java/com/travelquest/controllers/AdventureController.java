@@ -2,6 +2,7 @@ package com.travelquest.controllers;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -37,6 +38,12 @@ public class AdventureController {
             Authentication auth) {
         AdventureDTO updated = adventureService.updateAdventure(id, dto, newImages);
         return ResponseEntity.ok(updated);
+    }
+    
+    @DeleteMapping(value="{id}")
+    public ResponseEntity<Void> deleteAdventure(@PathVariable Long id,Authentication auth){
+    	adventureService.deleteAdventure(id, auth.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -89,6 +89,27 @@ public class AdventureServiceImpl implements AdventureService {
 
     @Override
     @Transactional
+    public void deleteAdventure(Long adventureId, String email) {
+        Adventure adventure = adventureRepository.findById(adventureId)
+                .orElseThrow(() -> new RuntimeException("Adventure not found"));
+
+        if (!adventure.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        List<AdventureImage> images = adventure.getImages();
+        if (images != null && !images.isEmpty()) {
+            for (AdventureImage image : images) {
+                cloudinaryService.deleteImage(image.getUrl());
+            }
+            imageRepository.deleteAll(images);
+        }
+
+        adventureRepository.delete(adventure);
+    }
+
+    @Override
+    @Transactional
     public void addImages(Long adventureId, List<MultipartFile> images, String email) {
         Adventure adventure = adventureRepository.findById(adventureId)
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));

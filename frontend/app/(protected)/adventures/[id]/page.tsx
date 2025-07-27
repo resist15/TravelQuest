@@ -11,9 +11,19 @@ import {
   Pencil,
   Save,
   UploadCloud,
+  Trash2,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,6 +45,7 @@ export default function AdventureDetails() {
   const [locationName, setLocationName] = useState<string>("");
   const [editing, setEditing] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const viewerRef = useRef<HTMLDivElement>(null);
 
   const fetchLocationName = useCallback(async (lat: number, lon: number) => {
@@ -147,15 +158,27 @@ export default function AdventureDetails() {
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (error || !adventure)
-    return <div className="p-6 text-red-500">Failed to load adventure.</div>;
+  const handleDelete = async () => {
+    if (!adventure?.id) return;
+
+    try {
+      await axios.delete(`/api/adventures/${adventure.id}`);
+      window.location.href = "/adventures";
+    } catch (error) {
+      console.error("Failed to delete adventure:", error);
+      alert("Failed to delete adventure.");
+    }
+  };
 
   const currentCoordinates = editing
     ? [formState?.longitude, formState?.latitude]
-    : [adventure.longitude, adventure.latitude];
+    : [adventure?.longitude, adventure?.latitude];
 
-  const currentRating = editing ? formState?.rating : adventure.rating;
+  const currentRating = editing ? formState?.rating : adventure?.rating;
+
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (error || !adventure)
+    return <div className="p-6 text-red-500">Failed to load adventure.</div>;
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
@@ -176,7 +199,15 @@ export default function AdventureDetails() {
             Created at: {format(new Date(adventure.createdAt), "dd MMM yyyy, hh:mm a")}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+            className="gap-1"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
+          </Button>
           <Button
             variant="outline"
             onClick={() =>
@@ -214,9 +245,7 @@ export default function AdventureDetails() {
       />
 
       <div className="flex justify-between items-center">
-        <p className="text-muted-foreground">
-          📍🗺️ {locationName}
-        </p>
+        <p className="text-muted-foreground">📍🗺️ {locationName}</p>
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
             <Star
@@ -238,7 +267,17 @@ export default function AdventureDetails() {
           <Input
             value={formState?.tags.join(",") || ""}
             onChange={e =>
-              setFormState(prev => ({ ...prev!, tags: e.target.value.split(",").map(tag => tag.trim()) }))
+              setFormState(prev => ({
+                ...prev!,
+                tags: e.target.value
+                  .split(",")
+                  .map(tag =>
+                    tag
+                      .replace(/\s/g, "") // remove spaces
+                      .replace(/[^a-zA-Z0-9]/g, "") // only alphanumeric
+                  )
+                  .filter(Boolean),
+              }))
             }
           />
         ) : (
@@ -280,19 +319,24 @@ export default function AdventureDetails() {
               }
             }}
           />
-          <Button
-            onClick={handleUploadNewImages}
-            disabled={photosToUpload.length === 0}
-            className="gap-2"
-          >
-            <UploadCloud className="w-4 h-4" /> Upload Selected Images
-          </Button>
-          <Button variant="outline" onClick={() => {
-            setUploadingPhotos(false);
-            setPhotosToUpload([]); // Clear selected files on cancel
-          }} className="ml-2">
-            Cancel
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleUploadNewImages}
+              disabled={photosToUpload.length === 0}
+              className="gap-2"
+            >
+              <UploadCloud className="w-4 h-4" /> Upload Selected Images
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setUploadingPhotos(false);
+                setPhotosToUpload([]);
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       )}
 
@@ -317,6 +361,7 @@ export default function AdventureDetails() {
         </div>
       </div>
 
+      {/* Fullscreen Image Viewer */}
       <Dialog.Root open={selectedIndex !== null} onOpenChange={() => setSelectedIndex(null)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/70 z-50" />
@@ -327,7 +372,6 @@ export default function AdventureDetails() {
             <Dialog.Title>
               <VisuallyHidden>Image Viewer</VisuallyHidden>
             </Dialog.Title>
-
             {selectedIndex !== null && (
               <div className="relative max-w-4xl w-full max-h-screen">
                 <img
@@ -341,14 +385,9 @@ export default function AdventureDetails() {
                   onClick={() => setSelectedIndex(null)}
                 >
                   <X className="w-6 h-6" />
-                  <VisuallyHidden>Close</VisuallyHidden>
                 </Button>
                 <div className="absolute top-1/2 -translate-y-1/2 left-4">
-                  <Button
-                    variant="ghost"
-                    onClick={prevImage}
-                    disabled={selectedIndex === 0}
-                  >
+                  <Button variant="ghost" onClick={prevImage} disabled={selectedIndex === 0}>
                     <ChevronLeft className="w-6 h-6 text-white" />
                   </Button>
                 </div>
@@ -366,6 +405,20 @@ export default function AdventureDetails() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Adventure</AlertDialogTitle>
+          </AlertDialogHeader>
+          <p>This action cannot be undone. Are you sure you want to delete this adventure?</p>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

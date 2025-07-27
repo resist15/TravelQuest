@@ -9,6 +9,7 @@ import com.travelquest.dto.AdventureDTO;
 public interface AdventureService {
     AdventureDTO createAdventure(String email, AdventureDTO dto, List<MultipartFile> images);
     AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages);
+    public void deleteAdventure(Long adventureId, String email);
     void addImages(Long adventureId, List<MultipartFile> images, String email);
     void deleteImage(Long imageId, String email);
     List<AdventureDTO> getAdventuresByUser(String email);
