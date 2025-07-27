@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { motion, AnimatePresence } from "framer-motion"; // Import motion and AnimatePresence
 import {
   AlertDialog,
   AlertDialogContent,
@@ -33,6 +34,7 @@ import axios from "@/lib/axios";
 import { format } from "date-fns";
 import clsx from "clsx";
 import { AdventureDTO } from "@/types/AdventureDTO";
+import { toast } from "sonner"; // Assuming you have sonner for toasts
 
 export default function AdventureDetails() {
   const { id } = useParams();
@@ -46,6 +48,7 @@ export default function AdventureDetails() {
   const [editing, setEditing] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [tagsInput, setTagsInput] = useState<string>("");
   const viewerRef = useRef<HTMLDivElement>(null);
 
   const fetchLocationName = useCallback(async (lat: number, lon: number) => {
@@ -86,21 +89,47 @@ export default function AdventureDetails() {
     }
   }, [adventure, formState, editing, fetchLocationName]);
 
+  useEffect(() => {
+    if (formState?.tags) {
+      setTagsInput(formState.tags.join(", "));
+    } else {
+      setTagsInput("");
+    }
+  }, [formState, editing]);
+
   const handleSaveAdventureDetails = async () => {
     if (!formState) return;
 
+    const tagsArray = tagsInput
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag !== "");
+
+    // Apply tag limit here
+    const uniqueTags = Array.from(new Set(tagsArray)).slice(0, 4);
+    if (tagsArray.length > 4) {
+      toast.warning("Only the first 4 tags will be saved.");
+    }
+
+    const updatedFormState = {
+      ...formState,
+      tags: uniqueTags,
+    };
+
     const formData = new FormData();
-    formData.append("data", new Blob([JSON.stringify(formState)], { type: "application/json" }));
+    formData.append("data", new Blob([JSON.stringify(updatedFormState)], { type: "application/json" }));
 
     try {
-      const res = await axios.put(`/api/adventures/${formState.id}`, formData, {
+      const res = await axios.put(`/api/adventures/${updatedFormState.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setAdventure(res.data);
       setFormState(res.data);
       setEditing(false);
+      toast.success("Adventure details saved successfully!");
     } catch (error) {
       console.error("Update adventure details failed", error);
+      toast.error("Failed to save adventure details.");
     }
   };
 
@@ -121,8 +150,10 @@ export default function AdventureDetails() {
 
       setPhotosToUpload([]);
       setUploadingPhotos(false);
+      toast.success("Images uploaded successfully!");
     } catch (error) {
       console.error("Image upload failed", error);
+      toast.error("Failed to upload images.");
     }
   };
 
@@ -163,10 +194,13 @@ export default function AdventureDetails() {
 
     try {
       await axios.delete(`/api/adventures/${adventure.id}`);
-      window.location.href = "/adventures";
+      toast.success("Adventure deleted successfully!");
+      window.location.href = "/adventures"; // Redirect after successful deletion
     } catch (error) {
       console.error("Failed to delete adventure:", error);
-      alert("Failed to delete adventure.");
+      toast.error("Failed to delete adventure.");
+    } finally {
+      setShowDeleteDialog(false);
     }
   };
 
@@ -176,13 +210,18 @@ export default function AdventureDetails() {
 
   const currentRating = editing ? formState?.rating : adventure?.rating;
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="flex items-center justify-center min-h-[50vh] text-xl">Loading adventure...</div>;
   if (error || !adventure)
-    return <div className="p-6 text-red-500">Failed to load adventure.</div>;
+    return <div className="flex items-center justify-center min-h-[50vh] text-red-500 text-xl">Failed to load adventure.</div>;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center">
+    <motion.div
+      className="p-6 space-y-6 max-w-5xl mx-auto"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <div>
           {editing ? (
             <Input
@@ -190,7 +229,7 @@ export default function AdventureDetails() {
               onChange={e =>
                 setFormState(prev => ({ ...prev!, name: e.target.value }))
               }
-              className="text-4xl font-bold text-primary mb-1"
+              className="text-4xl font-bold text-primary mb-1 border-b-2 focus:border-primary-foreground transition-colors"
             />
           ) : (
             <h1 className="text-4xl font-bold text-primary mb-1">✈️ {adventure.name}</h1>
@@ -199,7 +238,7 @@ export default function AdventureDetails() {
             Created at: {format(new Date(adventure.createdAt), "dd MMM yyyy, hh:mm a")}
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2 justify-end">
           <Button
             variant="destructive"
             onClick={() => setShowDeleteDialog(true)}
@@ -238,25 +277,40 @@ export default function AdventureDetails() {
         </div>
       </div>
 
-      <AdventureMap
-        coordinates={currentCoordinates as [number, number]}
-        onMapClick={handleMapClick}
-        isEditable={editing}
-      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="w-full rounded-lg overflow-hidden shadow-md"
+      >
+        <AdventureMap
+          coordinates={currentCoordinates as [number, number]}
+          onMapClick={handleMapClick}
+          isEditable={editing}
+        />
+      </motion.div>
 
-      <div className="flex justify-between items-center">
-        <p className="text-muted-foreground">📍🗺️ {locationName}</p>
+      <div className="flex justify-between items-center mt-4">
+        <p className="text-muted-foreground flex items-center gap-2">
+          <MapPin className="w-4 h-4" /> {locationName}
+        </p>
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Star
+            <motion.div
               key={i}
-              className={clsx("w-4 h-4", {
-                "text-yellow-400 fill-yellow-400": i < currentRating!,
-                "text-muted": i >= currentRating!,
-                "cursor-pointer": editing,
-              })}
-              onClick={() => handleRatingChange(i + 1)}
-            />
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              <Star
+                className={clsx("w-5 h-5 transition-colors duration-200", {
+                  "text-yellow-400 fill-yellow-400": i < currentRating!,
+                  "text-muted-foreground": i >= currentRating!,
+                  "cursor-pointer": editing,
+                })}
+                onClick={() => handleRatingChange(i + 1)}
+              />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -265,115 +319,164 @@ export default function AdventureDetails() {
         <h2 className="text-lg font-semibold mb-2">Tags</h2>
         {editing ? (
           <Input
-            value={formState?.tags.join(",") || ""}
-            onChange={e =>
-              setFormState(prev => ({
+            value={tagsInput}
+            onChange={(e) => {
+              const input = e.target.value;
+              const sanitized = input.replace(/[^a-zA-Z0-9, ]/g, ""); // Allow spaces for better user experience while typing
+              setTagsInput(sanitized);
+            }}
+            onBlur={() => { // Process tags on blur
+              const tagsArray = tagsInput
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter((tag) => tag !== "");
+
+              const uniqueTags = Array.from(new Set(tagsArray)).slice(0, 4); // Enforce limit here
+              if (tagsArray.length > 4) {
+                 toast.warning("Tags are limited to 4. Excess tags were removed.");
+              }
+
+              setFormState((prev) => ({
                 ...prev!,
-                tags: e.target.value
-                  .split(",")
-                  .map(tag =>
-                    tag
-                      .replace(/\s/g, "") // remove spaces
-                      .replace(/[^a-zA-Z0-9]/g, "") // only alphanumeric
-                  )
-                  .filter(Boolean),
-              }))
-            }
+                tags: uniqueTags,
+              }));
+              // Update tagsInput to reflect the cleaned and limited tags
+              setTagsInput(uniqueTags.join(", "));
+            }}
+            placeholder="Tags (comma separated, max 4)"
           />
         ) : (
           <div className="flex flex-wrap gap-2">
-            {adventure.tags.map(tag => (
-              <Badge variant="outline" key={tag}>
-                {tag}
-              </Badge>
-            ))}
+            <AnimatePresence>
+              {adventure.tags.map(tag => (
+                <motion.div
+                  key={tag}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Badge variant="outline" className="px-3 py-1 text-sm rounded-full">
+                    {tag}
+                  </Badge>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
 
-      <div>
+      <div className="py-4">
         <h2 className="text-lg font-semibold mb-2">Description</h2>
         {editing ? (
           <textarea
-            className="w-full border p-2 rounded"
+            className="w-full border p-3 rounded-lg min-h-[120px] focus:ring-2 focus:ring-primary-foreground transition-all"
             value={formState?.description || ""}
             onChange={e =>
               setFormState(prev => ({ ...prev!, description: e.target.value }))
             }
+            placeholder="Write your adventure description here..."
           />
         ) : (
-          <p className="text-muted-foreground leading-relaxed">{adventure.description}</p>
+          <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{adventure.description}</p>
         )}
       </div>
 
-      {uploadingPhotos && (
-        <div className="space-y-4 p-4 border rounded-lg bg-card">
-          <h2 className="text-lg font-semibold">Add New Images</h2>
-          <Input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={e => {
-              if (e.target.files) {
-                setPhotosToUpload(Array.from(e.target.files));
-              }
-            }}
-          />
-          <div className="flex gap-2">
-            <Button
-              onClick={handleUploadNewImages}
-              disabled={photosToUpload.length === 0}
-              className="gap-2"
-            >
-              <UploadCloud className="w-4 h-4" /> Upload Selected Images
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setUploadingPhotos(false);
-                setPhotosToUpload([]);
+      <AnimatePresence>
+        {uploadingPhotos && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4 p-4 border rounded-lg bg-card shadow-sm"
+          >
+            <h2 className="text-lg font-semibold">Add New Images</h2>
+            <Input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={e => {
+                if (e.target.files) {
+                  setPhotosToUpload(Array.from(e.target.files));
+                }
               }}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={handleUploadNewImages}
+                disabled={photosToUpload.length === 0}
+                className="gap-2"
+              >
+                <UploadCloud className="w-4 h-4" /> Upload Selected Images
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setUploadingPhotos(false);
+                  setPhotosToUpload([]);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div>
+      <div className="py-4">
         <h2 className="text-lg font-semibold mb-2">Gallery</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {allImages.map((src, idx) => (
-            <Card
-              key={idx}
-              onClick={() => setSelectedIndex(idx)}
-              className="cursor-pointer overflow-hidden hover:ring-2 ring-primary"
-            >
-              <CardContent className="p-0">
-                <img
-                  src={src}
-                  alt={`Adventure Image ${idx}`}
-                  className="w-full h-32 object-cover rounded"
-                />
-              </CardContent>
-            </Card>
-          ))}
+          {allImages.length > 0 ? (
+            allImages.map((src, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.03 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card
+                  onClick={() => setSelectedIndex(idx)}
+                  className="cursor-pointer overflow-hidden aspect-video relative group"
+                >
+                  <CardContent className="p-0">
+                    <img
+                      src={src}
+                      alt={`Adventure Image ${idx}`}
+                      className="w-full h-full object-cover rounded transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <span className="text-white text-sm">View</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <p className="text-muted-foreground col-span-full">No images added yet.</p>
+          )}
         </div>
       </div>
 
-      {/* Fullscreen Image Viewer */}
       <Dialog.Root open={selectedIndex !== null} onOpenChange={() => setSelectedIndex(null)}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/70 z-50" />
+          <Dialog.Overlay className="fixed inset-0 bg-black/70 z-50 animate-in fade-in-0" />
           <Dialog.Content
-            className="fixed inset-0 flex items-center justify-center z-50"
+            className="fixed inset-0 flex items-center justify-center z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
             ref={viewerRef}
           >
             <Dialog.Title>
               <VisuallyHidden>Image Viewer</VisuallyHidden>
             </Dialog.Title>
             {selectedIndex !== null && (
-              <div className="relative max-w-4xl w-full max-h-screen">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className="relative max-w-4xl w-full max-h-screen"
+              >
                 <img
                   src={allImages[selectedIndex]}
                   alt="Selected"
@@ -400,25 +503,28 @@ export default function AdventureDetails() {
                     <ChevronRight className="w-6 h-6 text-white" />
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
 
-      {/* Delete Confirmation Modal */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90%] max-w-md rounded-lg p-6">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Adventure</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold">Confirm Deletion</AlertDialogTitle>
           </AlertDialogHeader>
-          <p>This action cannot be undone. Are you sure you want to delete this adventure?</p>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          <p className="text-muted-foreground text-sm mt-2">This action cannot be undone. Are you sure you want to delete this adventure permanently?</p>
+          <AlertDialogFooter className="mt-6 flex justify-end gap-3">
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </motion.div>
   );
 }
