@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { motion, AnimatePresence } from "framer-motion"; // Import motion and AnimatePresence
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -34,7 +34,7 @@ import axios from "@/lib/axios";
 import { format } from "date-fns";
 import clsx from "clsx";
 import { AdventureDTO } from "@/types/AdventureDTO";
-import { toast } from "sonner"; // Assuming you have sonner for toasts
+import { toast } from "sonner";
 
 export default function AdventureDetails() {
   const { id } = useParams();
@@ -50,6 +50,7 @@ export default function AdventureDetails() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [tagsInput, setTagsInput] = useState<string>("");
   const viewerRef = useRef<HTMLDivElement>(null);
+  const tagsInputRef = useRef<HTMLInputElement>(null); // Ref for focusing tags input
 
   const fetchLocationName = useCallback(async (lat: number, lon: number) => {
     try {
@@ -65,12 +66,13 @@ export default function AdventureDetails() {
     }
   }, []);
 
+  // Effect to fetch adventure data on component mount or ID change
   useEffect(() => {
     const fetchAdventure = async () => {
       try {
         const res = await axios.get(`/api/adventures/${id}`);
         setAdventure(res.data);
-        setFormState(res.data);
+        setFormState(res.data); // Initialize formState with fetched data
       } catch (err) {
         setError(true);
       } finally {
@@ -80,6 +82,7 @@ export default function AdventureDetails() {
     fetchAdventure();
   }, [id]);
 
+  // Effect to fetch location name based on current coordinates
   useEffect(() => {
     const currentLat = editing ? formState?.latitude : adventure?.latitude;
     const currentLon = editing ? formState?.longitude : adventure?.longitude;
@@ -89,50 +92,134 @@ export default function AdventureDetails() {
     }
   }, [adventure, formState, editing, fetchLocationName]);
 
+  // Focus the tags input when entering editing mode
   useEffect(() => {
-    if (formState?.tags) {
-      setTagsInput(formState.tags.join(", "));
-    } else {
-      setTagsInput("");
+    if (editing && tagsInputRef.current) {
+      tagsInputRef.current.focus();
     }
-  }, [formState, editing]);
+  }, [editing]);
 
+  // useCallback for commitTag to prevent re-creation on every render
+  const commitTag = useCallback(() => {
+    const tagToCommit = tagsInput.trim().replace(/[^a-zA-Z0-9 ]/g, ""); // Sanitize here
+    if (!tagToCommit) {
+      setTagsInput(""); // Clear input if empty or only special chars
+      return;
+    }
+
+    setFormState(prev => {
+      const currentTags = prev?.tags ? [...prev.tags] : [];
+
+      if (currentTags.length >= 4 && !currentTags.includes(tagToCommit)) {
+        toast.warning("You can add a maximum of 4 tags.");
+        setTagsInput("");
+        return prev;
+      }
+
+      if (!currentTags.includes(tagToCommit)) {
+        const updatedTags = [...currentTags, tagToCommit];
+        // Enforce limit strictly when adding, but allow user to type more than 4 momentarily
+        if (updatedTags.length > 4) {
+          toast.warning("Tags are limited to 4. Excess tags were ignored.");
+        }
+        setTagsInput(""); // Clear input after committing
+        return { ...prev!, tags: updatedTags.slice(0, 4) }; // Slice to ensure max 4
+      } else {
+        toast.info(`Tag '${tagToCommit}' already exists.`);
+        setTagsInput(""); // Clear input even if tag exists
+        return prev;
+      }
+    });
+  }, [tagsInput]); // Depend on tagsInput to get its latest value
+
+  // Handle live input changes for tags
+  const handleTagInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    // Allow alphanumeric characters, spaces, and a single comma (for immediate commit)
+    const sanitized = input.replace(/[^a-zA-Z0-9, ]/g, "");
+
+    // If a comma is typed, commit the tag
+    if (sanitized.endsWith(",")) {
+      setTagsInput(sanitized.slice(0, -1)); // Remove the comma for commit
+      commitTag();
+    } else {
+      setTagsInput(sanitized);
+    }
+  }, [commitTag]);
+
+  // Handle key presses for tags input (e.g., Enter, Backspace)
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Prevent form submission
+      commitTag();
+    }
+    // Allow backspace to remove the last tag if input is empty
+    if (e.key === "Backspace" && tagsInput === "" && formState?.tags && formState.tags.length > 0) {
+      e.preventDefault();
+      setFormState(prev => {
+        const updatedTags = [...prev!.tags];
+        const removedTag = updatedTags.pop();
+        if (removedTag) {
+          // Option to put the removed tag back into the input for quick re-edit
+          // setTagsInput(removedTag);
+        }
+        return { ...prev!, tags: updatedTags };
+      });
+    }
+  }, [tagsInput, commitTag, formState]);
+
+  // Handle removing a tag by clicking its X button
+  const handleRemoveTag = useCallback((tagToRemove: string) => {
+    setFormState(prev => {
+      if (!prev || !prev.tags) return prev;
+      const updatedTags = prev.tags.filter(tag => tag !== tagToRemove);
+      return { ...prev, tags: updatedTags };
+    });
+  }, []);
+
+  // Handle saving adventure details
   const handleSaveAdventureDetails = async () => {
     if (!formState) return;
 
-    const tagsArray = tagsInput
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag !== "");
-
-    // Apply tag limit here
-    const uniqueTags = Array.from(new Set(tagsArray)).slice(0, 4);
-    if (tagsArray.length > 4) {
-      toast.warning("Only the first 4 tags will be saved.");
+    // Commit any remaining text in tagsInput before saving
+    if (tagsInput.trim()) {
+      commitTag(); // This will update formState.tags
     }
 
-    const updatedFormState = {
-      ...formState,
-      tags: uniqueTags,
-    };
+    // IMPORTANT: Create a new object for finalFormState from the latest formState,
+    // as commitTag updates formState asynchronously.
+    // If commitTag changes formState, you need to ensure you're using the LATEST state
+    // for the payload. Using a functional update here is safer.
+    setFormState(prevFormState => {
+      if (!prevFormState) return null; // Should not happen
 
-    const formData = new FormData();
-    formData.append("data", new Blob([JSON.stringify(updatedFormState)], { type: "application/json" }));
+      const finalFormState = {
+        ...prevFormState,
+        tags: prevFormState.tags, // This should now hold the committed tags
+      };
 
-    try {
-      const res = await axios.put(`/api/adventures/${updatedFormState.id}`, formData, {
+      const formData = new FormData();
+      formData.append("data", new Blob([JSON.stringify(finalFormState)], { type: "application/json" }));
+
+      axios.put(`/api/adventures/${finalFormState.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
-      });
-      setAdventure(res.data);
-      setFormState(res.data);
-      setEditing(false);
-      toast.success("Adventure details saved successfully!");
-    } catch (error) {
-      console.error("Update adventure details failed", error);
-      toast.error("Failed to save adventure details.");
-    }
+      })
+        .then(res => {
+          setAdventure(res.data);
+          setFormState(res.data);
+          setEditing(false);
+          toast.success("Adventure details saved successfully!");
+        })
+        .catch(error => {
+          console.error("Update adventure details failed", error);
+          toast.error("Failed to save adventure details.");
+        });
+
+      return prevFormState; // Return current state; actual update handled by .then
+    });
   };
 
+  // Handle uploading new images
   const handleUploadNewImages = async () => {
     if (!photosToUpload.length || !adventure?.id) return;
 
@@ -195,7 +282,7 @@ export default function AdventureDetails() {
     try {
       await axios.delete(`/api/adventures/${adventure.id}`);
       toast.success("Adventure deleted successfully!");
-      window.location.href = "/adventures"; // Redirect after successful deletion
+      window.location.href = "/adventures";
     } catch (error) {
       console.error("Failed to delete adventure:", error);
       toast.error("Failed to delete adventure.");
@@ -318,33 +405,44 @@ export default function AdventureDetails() {
       <div>
         <h2 className="text-lg font-semibold mb-2">Tags</h2>
         {editing ? (
-          <Input
-            value={tagsInput}
-            onChange={(e) => {
-              const input = e.target.value;
-              const sanitized = input.replace(/[^a-zA-Z0-9, ]/g, ""); // Allow spaces for better user experience while typing
-              setTagsInput(sanitized);
-            }}
-            onBlur={() => { // Process tags on blur
-              const tagsArray = tagsInput
-                .split(",")
-                .map((tag) => tag.trim())
-                .filter((tag) => tag !== "");
-
-              const uniqueTags = Array.from(new Set(tagsArray)).slice(0, 4); // Enforce limit here
-              if (tagsArray.length > 4) {
-                 toast.warning("Tags are limited to 4. Excess tags were removed.");
+          <div className="flex flex-wrap items-center gap-2 border rounded-md p-2 min-h-[40px] focus-within:ring-2 focus-within:ring-primary-foreground transition-all">
+            <AnimatePresence>
+              {(formState?.tags || []).map(tag => (
+                <motion.div
+                  key={tag}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                  className="inline-flex items-center bg-secondary text-secondary-foreground rounded-full pl-3 pr-1 py-1 text-sm whitespace-nowrap"
+                >
+                  {tag}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 ml-1 rounded-full hover:bg-secondary/80"
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            <Input
+              ref={tagsInputRef}
+              value={tagsInput}
+              onChange={handleTagInputChange}
+              onKeyDown={handleKeyDown}
+              onBlur={commitTag}
+              placeholder={
+                (formState?.tags || []).length < 4
+                  ? "Add tags (comma or Enter to commit)"
+                  : "Max 4 tags reached"
               }
-
-              setFormState((prev) => ({
-                ...prev!,
-                tags: uniqueTags,
-              }));
-              // Update tagsInput to reflect the cleaned and limited tags
-              setTagsInput(uniqueTags.join(", "));
-            }}
-            placeholder="Tags (comma separated, max 4)"
-          />
+              disabled={(formState?.tags || []).length >= 4}
+              className="flex-1 min-w-[150px] border-none focus-visible:ring-0 shadow-none bg-transparent"
+            />
+          </div>
         ) : (
           <div className="flex flex-wrap gap-2">
             <AnimatePresence>
