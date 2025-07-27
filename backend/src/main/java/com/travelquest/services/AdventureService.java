@@ -17,4 +17,6 @@ public interface AdventureService {
     AdventureDTO getAdventureById(Long id);
     //
     List<AdventureDTO> getRecentAdventures();
+    List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order);
+    //
 }

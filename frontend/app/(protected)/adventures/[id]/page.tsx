@@ -25,6 +25,7 @@ import {
   AlertDialogAction,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,7 +67,7 @@ export default function AdventureDetails() {
     }
   }, []);
 
-  // Effect to fetch adventure data on component mount or ID change
+
   useEffect(() => {
     const fetchAdventure = async () => {
       try {
@@ -334,6 +335,7 @@ export default function AdventureDetails() {
             <Trash2 className="w-4 h-4" />
             Delete
           </Button>
+
           <Button
             variant="outline"
             onClick={() =>
@@ -469,6 +471,7 @@ export default function AdventureDetails() {
         {editing ? (
           <textarea
             className="w-full border p-3 rounded-lg min-h-[120px] focus:ring-2 focus:ring-primary-foreground transition-all"
+
             value={formState?.description || ""}
             onChange={e =>
               setFormState(prev => ({ ...prev!, description: e.target.value }))

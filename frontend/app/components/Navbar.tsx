@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import api from "@/lib/axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { AxiosError } from "axios"; // Import AxiosError
+import { AxiosError } from "axios";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);

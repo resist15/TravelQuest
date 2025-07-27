@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import SidebarFilter from "@/components/SidebarFilter";
 import AdventureCard from "@/components/AdventureCard";
+
 import {
   Drawer,
   DrawerContent,

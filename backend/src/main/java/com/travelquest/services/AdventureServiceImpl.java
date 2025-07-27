@@ -1,6 +1,7 @@
 package com.travelquest.services;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -11,6 +12,7 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -74,6 +76,7 @@ public class AdventureServiceImpl implements AdventureService {
         adventure.setDescription(dto.getDescription());
         adventure.setLink(dto.getLink());
         adventure.setRating(dto.getRating());
+		    adventure.setUpdatedAt(LocalDateTime.now());
 
         Point point = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
         point.setSRID(4326);
@@ -239,15 +242,38 @@ public class AdventureServiceImpl implements AdventureService {
                            .collect(Collectors.toList())
                 )
                 .createdAt(adventure.getCreatedAt())
+				        .updatedAt(adventure.getUpdatedAt())
                 .build();
     }
 
     //
+
 	@Override
 	public List<AdventureDTO> getRecentAdventures() {
 		return adventureRepository.findTopThreeByOrderByCreatedAtDesc().stream()
-	            .map(this::toDTO)
-	            .collect(Collectors.toList());
+				.map(this::toDTO)
+				.collect(Collectors.toList());
 	}
-    
+
+	@Override
+	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order) {
+		User user = userRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		// Default sort fallback
+		String sortField = switch (sortBy.toLowerCase()) {
+		case "name", "rating", "createdAt", "updatedAt" -> sortBy;
+		default -> "createdAt";
+		};
+
+		Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+		Pageable pageable = PageRequest.of(0, 100, Sort.by(direction, sortField));
+
+		return adventureRepository.findByUser(user, pageable)
+				.stream()
+				.map(this::toDTO)
+				.collect(Collectors.toList());
+
+	}
+	//
 }

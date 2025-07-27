@@ -21,4 +21,6 @@ public class AdventureDTO {
     private List<String> imageUrls;
     //
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    //
 }
