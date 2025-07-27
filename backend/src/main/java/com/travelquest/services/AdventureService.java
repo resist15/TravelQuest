@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.exceptions.ResourceNotFoundException;
 
 public interface AdventureService {
     AdventureDTO createAdventure(String email, AdventureDTO dto, List<MultipartFile> images);
@@ -13,6 +14,7 @@ public interface AdventureService {
     void addImages(Long adventureId, List<MultipartFile> images, String email);
     void deleteImage(Long imageId, String email);
     List<AdventureDTO> getAdventuresByUser(String email);
+    AdventureDTO getAdventureByIdAndEmail(Long id,String email) throws ResourceNotFoundException;
     List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size,String name);
     AdventureDTO getAdventureById(Long id);
     //

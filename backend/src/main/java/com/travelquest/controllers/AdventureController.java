@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.services.AdventureService;
 
 import lombok.RequiredArgsConstructor;
@@ -91,8 +92,8 @@ public class AdventureController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id) {
-        return ResponseEntity.ok(adventureService.getAdventureById(id));
+    public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id,Authentication auth) throws ResourceNotFoundException {
+        return ResponseEntity.ok(adventureService.getAdventureByIdAndEmail(id,auth.getName()));
     }
     
     //

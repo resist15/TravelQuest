@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.locationtech.jts.geom.Coordinate;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +22,7 @@ import com.travelquest.dto.AdventureDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
 import com.travelquest.entity.User;
+import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.repositories.AdventureImageRepository;
 import com.travelquest.repositories.AdventureRepository;
 import com.travelquest.repositories.UserRepository;
@@ -97,7 +100,7 @@ public class AdventureServiceImpl implements AdventureService {
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
         if (!adventure.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("Unauthorized");
+            throw new AccessDeniedException("Unauthorized");
         }
 
         List<AdventureImage> images = adventure.getImages();
@@ -118,7 +121,7 @@ public class AdventureServiceImpl implements AdventureService {
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
         if (!adventure.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("Unauthorized");
+            throw new AccessDeniedException("Unauthorized");
         }
 
         uploadImages(images, adventure.getUser().getId(), adventure);
@@ -132,7 +135,7 @@ public class AdventureServiceImpl implements AdventureService {
 
         Adventure adventure = image.getAdventure();
         if (!adventure.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("Unauthorized");
+            throw new AccessDeniedException("Unauthorized");
         }
 
         cloudinaryService.deleteImage(image.getUrl());
@@ -149,7 +152,19 @@ public class AdventureServiceImpl implements AdventureService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
+    
+    @Override
+    public AdventureDTO getAdventureByIdAndEmail(Long id, String email) throws ResourceNotFoundException {
+        Adventure adventure = adventureRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
+        if (!adventure.getUser().getEmail().equals(email)) {
+            throw new AccessDeniedException("Unauthorized");
+        }
+
+        return this.toDTO(adventure);
+    }
+    
 //    @Override
 //    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String name) {
 //        User user = userRepository.findByEmail(email)
