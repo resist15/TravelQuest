@@ -81,7 +81,7 @@ export default function AdventureMap({ coordinates, onMapClick, isEditable }: Ad
   return (
     <div
       ref={mapRef}
-      className="w-full h-64 rounded-2xl border mb-2"
+      className="w-full h-64 rounded-1xl border"
     />
   );
 }

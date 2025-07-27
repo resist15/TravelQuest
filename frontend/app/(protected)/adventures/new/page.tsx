@@ -185,7 +185,7 @@ export default function NewAdventurePage() {
           />
         </div>
 
-        <Button type="submit" className="w-full"
+        <Button type="submit" className="w-full">
           Submit Adventure
         </Button>
       </form>
