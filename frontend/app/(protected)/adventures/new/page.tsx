@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import axios from "@/lib/axios";
+import clsx from "clsx";
 
 export default function NewAdventurePage() {
   const router = useRouter();
@@ -19,11 +21,11 @@ export default function NewAdventurePage() {
 
   const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
   const [rating, setRating] = useState(0);
-  const [link, setLink] = useState("");
   const [description, setDescription] = useState("");
 
+  // Initialize map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -36,11 +38,14 @@ export default function NewAdventurePage() {
 
     mapRef.current = map;
 
-    const observer = new ResizeObserver(() => {
-      map.resize();
-    });
-
+    const observer = new ResizeObserver(() => map.resize());
     observer.observe(mapContainerRef.current);
+
+    map.on("click", (e) => {
+      const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+      setSelectedLocation(coords);
+      placeMarker(coords, map);
+    });
 
     return () => {
       map.remove();
@@ -58,53 +63,51 @@ export default function NewAdventurePage() {
       (pos) => {
         const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         setSelectedLocation(coords);
-
         if (mapRef.current) {
           mapRef.current.flyTo({ center: coords, zoom: 12 });
           placeMarker(coords, mapRef.current);
         }
       },
-      () => {
-        toast.error("Unable to access location.");
-      }
+      () => toast.error("Unable to access location.")
     );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !category || !selectedLocation) {
+    if (!name || !tagsInput || !selectedLocation) {
       toast.error("Please fill in all required fields.");
       return;
     }
 
+    const tags = tagsInput
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => /^[a-zA-Z0-9]+$/.test(tag)); // alphanumeric only
+
+    if (tags.length === 0) {
+      toast.error("Please provide valid alphanumeric tags (no spaces or symbols).");
+      return;
+    }
+
     const [lng, lat] = selectedLocation;
-    const adventurePayload = {
+    const payload = {
       name,
       description,
-      link,
+      link: "", // intentionally left empty
       location: `${lat},${lng}`,
       latitude: lat,
       longitude: lng,
       rating,
-      tags: [category],
+      tags,
     };
 
     const formData = new FormData();
-    formData.append(
-      "data",
-      new Blob([JSON.stringify(adventurePayload)], { type: "application/json" })
-    );
+    formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
 
     try {
-      const res = await fetch("http://localhost:8080/api/adventures", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
-        body: formData,
+      await axios.post("/api/adventures", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-
-      if (!res.ok) throw new Error("Failed to create adventure");
 
       toast.success("Adventure added!");
       router.push("/adventures");
@@ -115,71 +118,76 @@ export default function NewAdventurePage() {
   };
 
   return (
-    <div className="min-h-screen max-w-3xl mx-auto px-4 py-8 bg-background text-foreground">
-      <h1 className="text-2xl font-semibold mb-6">Add New Adventure</h1>
+    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold">Add New Adventure</h1>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div>
-          <label className="block text-sm font-medium mb-1">Name*</label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} required />
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Name*"
+          required
+        />
+
+        <Input
+          value={tagsInput}
+          onChange={(e) => {
+            const input = e.target.value;
+            // Allow only letters, numbers, commas — no spaces, emojis, or special chars
+            const sanitized = input.replace(/[^a-zA-Z0-9,]/g, "");
+            setTagsInput(sanitized);
+          }}
+          placeholder="Tags (comma separated, alphanumeric only)*"
+          required
+        />
+
+
+        {/* Rating */}
+        <div className="flex items-center gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={clsx("w-5 h-5 cursor-pointer transition-colors", {
+                "text-yellow-400 fill-yellow-400": i < rating,
+                "text-muted": i >= rating,
+              })}
+              onClick={() => setRating(i + 1)}
+            />
+          ))}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Category*</label>
-          <Input value={category} onChange={(e) => setCategory(e.target.value)} required />
-        </div>
+        <Textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description"
+          rows={4}
+        />
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Rating</label>
-          <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Star
-                key={i}
-                className={`w-5 h-5 cursor-pointer ${
-                  rating >= i ? "text-yellow-500 fill-yellow-500" : "text-muted"
-                }`}
-                onClick={() => setRating(i)}
-              />
-            ))}
-          </div>
-        </div>
+        {/* Location Map */}
+        <div className="space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleUseCurrentLocation}
+            className="w-full"
+          >
+            Use My Current Location 📍
+          </Button>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Link</label>
-          <Input value={link} onChange={(e) => setLink(e.target.value)} />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Write your markdown here..."
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Select Location*</label>
-          <div className="flex items-center gap-3 mb-2">
-            <Button type="button" variant="outline" onClick={handleUseCurrentLocation}>
-              Use My Current Location 📍
-            </Button>
-
-            {selectedLocation && (
-              <div className="text-sm text-muted-foreground">
-                {selectedLocation[1].toFixed(4)}, {selectedLocation[0].toFixed(4)}
-              </div>
-            )}
-          </div>
+          {selectedLocation && (
+            <p className="text-sm text-muted-foreground text-center">
+              Latitude: {selectedLocation[1].toFixed(4)}, Longitude:{" "}
+              {selectedLocation[0].toFixed(4)}
+            </p>
+          )}
 
           <div
             ref={mapContainerRef}
-            className="w-full h-64 rounded border"
-            style={{ minHeight: "256px" }}
+            className="w-full h-64 rounded border border-muted"
           />
         </div>
 
-        <Button type="submit" className="w-full mt-4">
+        <Button type="submit" className="w-full">
           Submit Adventure
         </Button>
       </form>
