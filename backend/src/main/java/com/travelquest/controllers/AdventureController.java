@@ -2,6 +2,7 @@ package com.travelquest.controllers;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -38,6 +39,12 @@ public class AdventureController {
         AdventureDTO updated = adventureService.updateAdventure(id, dto, newImages);
         return ResponseEntity.ok(updated);
     }
+    
+    @DeleteMapping(value="{id}")
+    public ResponseEntity<Void> deleteAdventure(@PathVariable Long id,Authentication auth){
+    	adventureService.deleteAdventure(id, auth.getName());
+        return ResponseEntity.noContent().build();
+    }
 
     @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> addImagesToAdventure(
@@ -61,7 +68,28 @@ public class AdventureController {
         List<AdventureDTO> list = adventureService.getAdventuresByUser(auth.getName());
         return ResponseEntity.ok(list);
     }
-
+    
+//    @GetMapping("/my")
+//    public ResponseEntity<List<AdventureDTO>> getAdventuresByUserPaginated(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "6") int size,
+//            @RequestParam String name,
+//            Authentication auth) {
+//        List<AdventureDTO> paginatedAdventures = adventureService.getAdventuresByUserPaginated(auth.getName(), page, size);
+//        return ResponseEntity.ok(paginatedAdventures);
+//    }
+    @GetMapping("/my")
+    public ResponseEntity<List<AdventureDTO>> getMyAdventures(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(required = false) String name,
+            Authentication auth) {
+        List<AdventureDTO> adventures = adventureService.getAdventuresByUserPaginated(
+            auth.getName(), page, size, name
+        );
+        return ResponseEntity.ok(adventures);
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id) {
         return ResponseEntity.ok(adventureService.getAdventureById(id));

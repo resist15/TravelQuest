@@ -11,9 +11,21 @@ import {
   Pencil,
   Save,
   UploadCloud,
+  Trash2,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +35,7 @@ import axios from "@/lib/axios";
 import { format } from "date-fns";
 import clsx from "clsx";
 import { AdventureDTO } from "@/types/AdventureDTO";
+import { toast } from "sonner";
 
 export default function AdventureDetails() {
   const { id } = useParams();
@@ -35,7 +48,10 @@ export default function AdventureDetails() {
   const [locationName, setLocationName] = useState<string>("");
   const [editing, setEditing] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [tagsInput, setTagsInput] = useState<string>("");
   const viewerRef = useRef<HTMLDivElement>(null);
+  const tagsInputRef = useRef<HTMLInputElement>(null); // Ref for focusing tags input
 
   const fetchLocationName = useCallback(async (lat: number, lon: number) => {
     try {
@@ -51,12 +67,13 @@ export default function AdventureDetails() {
     }
   }, []);
 
+
   useEffect(() => {
     const fetchAdventure = async () => {
       try {
         const res = await axios.get(`/api/adventures/${id}`);
         setAdventure(res.data);
-        setFormState(res.data);
+        setFormState(res.data); // Initialize formState with fetched data
       } catch (err) {
         setError(true);
       } finally {
@@ -66,6 +83,7 @@ export default function AdventureDetails() {
     fetchAdventure();
   }, [id]);
 
+  // Effect to fetch location name based on current coordinates
   useEffect(() => {
     const currentLat = editing ? formState?.latitude : adventure?.latitude;
     const currentLon = editing ? formState?.longitude : adventure?.longitude;
@@ -75,24 +93,134 @@ export default function AdventureDetails() {
     }
   }, [adventure, formState, editing, fetchLocationName]);
 
+  // Focus the tags input when entering editing mode
+  useEffect(() => {
+    if (editing && tagsInputRef.current) {
+      tagsInputRef.current.focus();
+    }
+  }, [editing]);
+
+  // useCallback for commitTag to prevent re-creation on every render
+  const commitTag = useCallback(() => {
+    const tagToCommit = tagsInput.trim().replace(/[^a-zA-Z0-9 ]/g, ""); // Sanitize here
+    if (!tagToCommit) {
+      setTagsInput(""); // Clear input if empty or only special chars
+      return;
+    }
+
+    setFormState(prev => {
+      const currentTags = prev?.tags ? [...prev.tags] : [];
+
+      if (currentTags.length >= 4 && !currentTags.includes(tagToCommit)) {
+        toast.warning("You can add a maximum of 4 tags.");
+        setTagsInput("");
+        return prev;
+      }
+
+      if (!currentTags.includes(tagToCommit)) {
+        const updatedTags = [...currentTags, tagToCommit];
+        // Enforce limit strictly when adding, but allow user to type more than 4 momentarily
+        if (updatedTags.length > 4) {
+          toast.warning("Tags are limited to 4. Excess tags were ignored.");
+        }
+        setTagsInput(""); // Clear input after committing
+        return { ...prev!, tags: updatedTags.slice(0, 4) }; // Slice to ensure max 4
+      } else {
+        toast.info(`Tag '${tagToCommit}' already exists.`);
+        setTagsInput(""); // Clear input even if tag exists
+        return prev;
+      }
+    });
+  }, [tagsInput]); // Depend on tagsInput to get its latest value
+
+  // Handle live input changes for tags
+  const handleTagInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    // Allow alphanumeric characters, spaces, and a single comma (for immediate commit)
+    const sanitized = input.replace(/[^a-zA-Z0-9, ]/g, "");
+
+    // If a comma is typed, commit the tag
+    if (sanitized.endsWith(",")) {
+      setTagsInput(sanitized.slice(0, -1)); // Remove the comma for commit
+      commitTag();
+    } else {
+      setTagsInput(sanitized);
+    }
+  }, [commitTag]);
+
+  // Handle key presses for tags input (e.g., Enter, Backspace)
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Prevent form submission
+      commitTag();
+    }
+    // Allow backspace to remove the last tag if input is empty
+    if (e.key === "Backspace" && tagsInput === "" && formState?.tags && formState.tags.length > 0) {
+      e.preventDefault();
+      setFormState(prev => {
+        const updatedTags = [...prev!.tags];
+        const removedTag = updatedTags.pop();
+        if (removedTag) {
+          // Option to put the removed tag back into the input for quick re-edit
+          // setTagsInput(removedTag);
+        }
+        return { ...prev!, tags: updatedTags };
+      });
+    }
+  }, [tagsInput, commitTag, formState]);
+
+  // Handle removing a tag by clicking its X button
+  const handleRemoveTag = useCallback((tagToRemove: string) => {
+    setFormState(prev => {
+      if (!prev || !prev.tags) return prev;
+      const updatedTags = prev.tags.filter(tag => tag !== tagToRemove);
+      return { ...prev, tags: updatedTags };
+    });
+  }, []);
+
+  // Handle saving adventure details
   const handleSaveAdventureDetails = async () => {
     if (!formState) return;
 
-    const formData = new FormData();
-    formData.append("data", new Blob([JSON.stringify(formState)], { type: "application/json" }));
-
-    try {
-      const res = await axios.put(`/api/adventures/${formState.id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setAdventure(res.data);
-      setFormState(res.data);
-      setEditing(false);
-    } catch (error) {
-      console.error("Update adventure details failed", error);
+    // Commit any remaining text in tagsInput before saving
+    if (tagsInput.trim()) {
+      commitTag(); // This will update formState.tags
     }
+
+    // IMPORTANT: Create a new object for finalFormState from the latest formState,
+    // as commitTag updates formState asynchronously.
+    // If commitTag changes formState, you need to ensure you're using the LATEST state
+    // for the payload. Using a functional update here is safer.
+    setFormState(prevFormState => {
+      if (!prevFormState) return null; // Should not happen
+
+      const finalFormState = {
+        ...prevFormState,
+        tags: prevFormState.tags, // This should now hold the committed tags
+      };
+
+      const formData = new FormData();
+      formData.append("data", new Blob([JSON.stringify(finalFormState)], { type: "application/json" }));
+
+      axios.put(`/api/adventures/${finalFormState.id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+        .then(res => {
+          setAdventure(res.data);
+          setFormState(res.data);
+          setEditing(false);
+          toast.success("Adventure details saved successfully!");
+        })
+        .catch(error => {
+          console.error("Update adventure details failed", error);
+          toast.error("Failed to save adventure details.");
+        });
+
+      return prevFormState; // Return current state; actual update handled by .then
+    });
   };
 
+  // Handle uploading new images
   const handleUploadNewImages = async () => {
     if (!photosToUpload.length || !adventure?.id) return;
 
@@ -110,8 +238,10 @@ export default function AdventureDetails() {
 
       setPhotosToUpload([]);
       setUploadingPhotos(false);
+      toast.success("Images uploaded successfully!");
     } catch (error) {
       console.error("Image upload failed", error);
+      toast.error("Failed to upload images.");
     }
   };
 
@@ -147,19 +277,39 @@ export default function AdventureDetails() {
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (error || !adventure)
-    return <div className="p-6 text-red-500">Failed to load adventure.</div>;
+  const handleDelete = async () => {
+    if (!adventure?.id) return;
+
+    try {
+      await axios.delete(`/api/adventures/${adventure.id}`);
+      toast.success("Adventure deleted successfully!");
+      window.location.href = "/adventures";
+    } catch (error) {
+      console.error("Failed to delete adventure:", error);
+      toast.error("Failed to delete adventure.");
+    } finally {
+      setShowDeleteDialog(false);
+    }
+  };
 
   const currentCoordinates = editing
     ? [formState?.longitude, formState?.latitude]
-    : [adventure.longitude, adventure.latitude];
+    : [adventure?.longitude, adventure?.latitude];
 
-  const currentRating = editing ? formState?.rating : adventure.rating;
+  const currentRating = editing ? formState?.rating : adventure?.rating;
+
+  if (loading) return <div className="flex items-center justify-center min-h-[50vh] text-xl">Loading adventure...</div>;
+  if (error || !adventure)
+    return <div className="flex items-center justify-center min-h-[50vh] text-red-500 text-xl">Failed to load adventure.</div>;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center">
+    <motion.div
+      className="p-6 space-y-6 max-w-5xl mx-auto"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <div>
           {editing ? (
             <Input
@@ -167,7 +317,7 @@ export default function AdventureDetails() {
               onChange={e =>
                 setFormState(prev => ({ ...prev!, name: e.target.value }))
               }
-              className="text-4xl font-bold text-primary mb-1"
+              className="text-4xl font-bold text-primary mb-1 border-b-2 focus:border-primary-foreground transition-colors"
             />
           ) : (
             <h1 className="text-4xl font-bold text-primary mb-1">✈️ {adventure.name}</h1>
@@ -176,12 +326,21 @@ export default function AdventureDetails() {
             Created at: {format(new Date(adventure.createdAt), "dd MMM yyyy, hh:mm a")}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+            className="gap-1"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
+          </Button>
+
           <Button
             variant="outline"
             onClick={() =>
               window.open(
-                `http://googleusercontent.com/maps.google.com/search?q=${adventure.latitude},${adventure.longitude}`,
+                `https://www.google.com/maps?q=${adventure.latitude},${adventure.longitude}`,
                 "_blank"
               )
             }
@@ -207,27 +366,40 @@ export default function AdventureDetails() {
         </div>
       </div>
 
-      <AdventureMap
-        coordinates={currentCoordinates as [number, number]}
-        onMapClick={handleMapClick}
-        isEditable={editing}
-      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="w-full rounded-lg overflow-hidden shadow-md"
+      >
+        <AdventureMap
+          coordinates={currentCoordinates as [number, number]}
+          onMapClick={handleMapClick}
+          isEditable={editing}
+        />
+      </motion.div>
 
-      <div className="flex justify-between items-center">
-        <p className="text-muted-foreground">
-          📍🗺️ {locationName}
+      <div className="flex justify-between items-center mt-4">
+        <p className="text-muted-foreground flex items-center gap-2">
+          <MapPin className="w-4 h-4" /> {locationName}
         </p>
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Star
+            <motion.div
               key={i}
-              className={clsx("w-4 h-4", {
-                "text-yellow-400 fill-yellow-400": i < currentRating!,
-                "text-muted": i >= currentRating!,
-                "cursor-pointer": editing,
-              })}
-              onClick={() => handleRatingChange(i + 1)}
-            />
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              <Star
+                className={clsx("w-5 h-5 transition-colors duration-200", {
+                  "text-yellow-400 fill-yellow-400": i < currentRating!,
+                  "text-muted-foreground": i >= currentRating!,
+                  "cursor-pointer": editing,
+                })}
+                onClick={() => handleRatingChange(i + 1)}
+              />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -235,101 +407,177 @@ export default function AdventureDetails() {
       <div>
         <h2 className="text-lg font-semibold mb-2">Tags</h2>
         {editing ? (
-          <Input
-            value={formState?.tags.join(",") || ""}
-            onChange={e =>
-              setFormState(prev => ({ ...prev!, tags: e.target.value.split(",").map(tag => tag.trim()) }))
-            }
-          />
+          <div className="flex flex-wrap items-center gap-2 border rounded-md p-2 min-h-[40px] focus-within:ring-2 focus-within:ring-primary-foreground transition-all">
+            <AnimatePresence>
+              {(formState?.tags || []).map(tag => (
+                <motion.div
+                  key={tag}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                  className="inline-flex items-center bg-secondary text-secondary-foreground rounded-full pl-3 pr-1 py-1 text-sm whitespace-nowrap"
+                >
+                  {tag}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 ml-1 rounded-full hover:bg-secondary/80"
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            <Input
+              ref={tagsInputRef}
+              value={tagsInput}
+              onChange={handleTagInputChange}
+              onKeyDown={handleKeyDown}
+              onBlur={commitTag}
+              placeholder={
+                (formState?.tags || []).length < 4
+                  ? "Add tags (comma or Enter to commit)"
+                  : "Max 4 tags reached"
+              }
+              disabled={(formState?.tags || []).length >= 4}
+              className="flex-1 min-w-[150px] border-none focus-visible:ring-0 shadow-none bg-transparent"
+            />
+          </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {adventure.tags.map(tag => (
-              <Badge variant="outline" key={tag}>
-                {tag}
-              </Badge>
-            ))}
+            <AnimatePresence>
+              {adventure.tags.map(tag => (
+                <motion.div
+                  key={tag}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Badge variant="outline" className="px-3 py-1 text-sm rounded-full">
+                    {tag}
+                  </Badge>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
 
-      <div>
+      <div className="py-4">
         <h2 className="text-lg font-semibold mb-2">Description</h2>
         {editing ? (
           <textarea
-            className="w-full border p-2 rounded"
+            className="w-full border p-3 rounded-lg min-h-[120px] focus:ring-2 focus:ring-primary-foreground transition-all"
+
             value={formState?.description || ""}
             onChange={e =>
               setFormState(prev => ({ ...prev!, description: e.target.value }))
             }
+            placeholder="Write your adventure description here..."
           />
         ) : (
-          <p className="text-muted-foreground leading-relaxed">{adventure.description}</p>
+          <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{adventure.description}</p>
         )}
       </div>
 
-      {uploadingPhotos && (
-        <div className="space-y-4 p-4 border rounded-lg bg-card">
-          <h2 className="text-lg font-semibold">Add New Images</h2>
-          <Input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={e => {
-              if (e.target.files) {
-                setPhotosToUpload(Array.from(e.target.files));
-              }
-            }}
-          />
-          <Button
-            onClick={handleUploadNewImages}
-            disabled={photosToUpload.length === 0}
-            className="gap-2"
+      <AnimatePresence>
+        {uploadingPhotos && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4 p-4 border rounded-lg bg-card shadow-sm"
           >
-            <UploadCloud className="w-4 h-4" /> Upload Selected Images
-          </Button>
-          <Button variant="outline" onClick={() => {
-            setUploadingPhotos(false);
-            setPhotosToUpload([]); // Clear selected files on cancel
-          }} className="ml-2">
-            Cancel
-          </Button>
-        </div>
-      )}
+            <h2 className="text-lg font-semibold">Add New Images</h2>
+            <Input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={e => {
+                if (e.target.files) {
+                  setPhotosToUpload(Array.from(e.target.files));
+                }
+              }}
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={handleUploadNewImages}
+                disabled={photosToUpload.length === 0}
+                className="gap-2"
+              >
+                <UploadCloud className="w-4 h-4" /> Upload Selected Images
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setUploadingPhotos(false);
+                  setPhotosToUpload([]);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div>
+      <div className="py-4">
         <h2 className="text-lg font-semibold mb-2">Gallery</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {allImages.map((src, idx) => (
-            <Card
-              key={idx}
-              onClick={() => setSelectedIndex(idx)}
-              className="cursor-pointer overflow-hidden hover:ring-2 ring-primary"
-            >
-              <CardContent className="p-0">
-                <img
-                  src={src}
-                  alt={`Adventure Image ${idx}`}
-                  className="w-full h-32 object-cover rounded"
-                />
-              </CardContent>
-            </Card>
-          ))}
+          {allImages.length > 0 ? (
+            allImages.map((src, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.03 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Card
+                  onClick={() => setSelectedIndex(idx)}
+                  className="cursor-pointer overflow-hidden aspect-video relative group"
+                >
+                  <CardContent className="p-0">
+                    <img
+                      src={src}
+                      alt={`Adventure Image ${idx}`}
+                      className="w-full h-full object-cover rounded transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <span className="text-white text-sm">View</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          ) : (
+            <p className="text-muted-foreground col-span-full">No images added yet.</p>
+          )}
         </div>
       </div>
 
       <Dialog.Root open={selectedIndex !== null} onOpenChange={() => setSelectedIndex(null)}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/70 z-50" />
+          <Dialog.Overlay className="fixed inset-0 bg-black/70 z-50 animate-in fade-in-0" />
           <Dialog.Content
-            className="fixed inset-0 flex items-center justify-center z-50"
+            className="fixed inset-0 flex items-center justify-center z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
             ref={viewerRef}
           >
             <Dialog.Title>
               <VisuallyHidden>Image Viewer</VisuallyHidden>
             </Dialog.Title>
-
             {selectedIndex !== null && (
-              <div className="relative max-w-4xl w-full max-h-screen">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3 }}
+                className="relative max-w-4xl w-full max-h-screen"
+              >
                 <img
                   src={allImages[selectedIndex]}
                   alt="Selected"
@@ -341,14 +589,9 @@ export default function AdventureDetails() {
                   onClick={() => setSelectedIndex(null)}
                 >
                   <X className="w-6 h-6" />
-                  <VisuallyHidden>Close</VisuallyHidden>
                 </Button>
                 <div className="absolute top-1/2 -translate-y-1/2 left-4">
-                  <Button
-                    variant="ghost"
-                    onClick={prevImage}
-                    disabled={selectedIndex === 0}
-                  >
+                  <Button variant="ghost" onClick={prevImage} disabled={selectedIndex === 0}>
                     <ChevronLeft className="w-6 h-6 text-white" />
                   </Button>
                 </div>
@@ -361,11 +604,28 @@ export default function AdventureDetails() {
                     <ChevronRight className="w-6 h-6 text-white" />
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             )}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-    </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="w-[90%] max-w-md rounded-lg p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold">Confirm Deletion</AlertDialogTitle>
+          </AlertDialogHeader>
+          <p className="text-muted-foreground text-sm mt-2">This action cannot be undone. Are you sure you want to delete this adventure permanently?</p>
+          <AlertDialogFooter className="mt-6 flex justify-end gap-3">
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </motion.div>
   );
 }

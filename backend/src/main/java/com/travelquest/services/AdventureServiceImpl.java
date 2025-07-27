@@ -31,185 +31,223 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AdventureServiceImpl implements AdventureService {
 
-	private final AdventureRepository adventureRepository;
-	private final UserRepository userRepository;
-	private final AdventureImageRepository imageRepository;
-	private final CloudinaryService cloudinaryService;
-	private final GeometryFactory geometryFactory = new GeometryFactory();
+    private final AdventureRepository adventureRepository;
+    private final UserRepository userRepository;
+    private final AdventureImageRepository imageRepository;
+    private final CloudinaryService cloudinaryService;
+    private final GeometryFactory geometryFactory = new GeometryFactory();
 
-	@Override
-	@Transactional
-	public AdventureDTO createAdventure(String email, AdventureDTO dto, List<MultipartFile> images) {
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+    @Override
+    @Transactional
+    public AdventureDTO createAdventure(String email, AdventureDTO dto, List<MultipartFile> images) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-		Point geoPoint = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
-		geoPoint.setSRID(4326);
+        Point geoPoint = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
+        geoPoint.setSRID(4326);
 
-		Adventure adventure = Adventure.builder()
-				.name(dto.getName())
-				.location(dto.getLocation())
-				.tags(dto.getTags())
-				.description(dto.getDescription())
-				.link(dto.getLink())
-				.rating(dto.getRating())
-				.geoPoint(geoPoint)
-				.user(user)
-				.build();
+        Adventure adventure = Adventure.builder()
+                .name(dto.getName())
+                .location(dto.getLocation())
+                .tags(dto.getTags())
+                .description(dto.getDescription())
+                .link(dto.getLink())
+                .rating(dto.getRating())
+                .geoPoint(geoPoint)
+                .user(user)
+                .build();
 
-		Adventure savedAdventure = adventureRepository.save(adventure);
+        Adventure savedAdventure = adventureRepository.save(adventure);
 
-		uploadImages(images, user.getId(), savedAdventure);
+        uploadImages(images, user.getId(), savedAdventure);
 
-		return toDTO(savedAdventure);
-	}
+        return toDTO(savedAdventure);
+    }
 
-	@Override
-	@Transactional
-	public AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages) {
-		Adventure adventure = adventureRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Adventure not found"));
+    @Override
+    @Transactional
+    public AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages) {
+        Adventure adventure = adventureRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
-		adventure.setName(dto.getName());
-		adventure.setLocation(dto.getLocation());
-		adventure.setTags(dto.getTags());
-		adventure.setDescription(dto.getDescription());
-		adventure.setLink(dto.getLink());
-		adventure.setRating(dto.getRating());
-		adventure.setUpdatedAt(LocalDateTime.now());
-		
-		Point point = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
-		point.setSRID(4326);
-		adventure.setGeoPoint(point);
+        adventure.setName(dto.getName());
+        adventure.setLocation(dto.getLocation());
+        adventure.setTags(dto.getTags());
+        adventure.setDescription(dto.getDescription());
+        adventure.setLink(dto.getLink());
+        adventure.setRating(dto.getRating());
+		    adventure.setUpdatedAt(LocalDateTime.now());
 
-		if (newImages != null && !newImages.isEmpty()) {
-			uploadImages(newImages, adventure.getUser().getId(), adventure);
-		}
+        Point point = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
+        point.setSRID(4326);
+        adventure.setGeoPoint(point);
 
-		Adventure updated = adventureRepository.save(adventure);
-		return toDTO(updated);
-	}
+        if (newImages != null && !newImages.isEmpty()) {
+            uploadImages(newImages, adventure.getUser().getId(), adventure);
+        }
 
-	@Override
-	@Transactional
-	public void addImages(Long adventureId, List<MultipartFile> images, String email) {
-		Adventure adventure = adventureRepository.findById(adventureId)
-				.orElseThrow(() -> new RuntimeException("Adventure not found"));
+        Adventure updated = adventureRepository.save(adventure);
+        return toDTO(updated);
+    }
 
-		if (!adventure.getUser().getEmail().equals(email)) {
-			throw new RuntimeException("Unauthorized");
-		}
+    @Override
+    @Transactional
+    public void deleteAdventure(Long adventureId, String email) {
+        Adventure adventure = adventureRepository.findById(adventureId)
+                .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
-		uploadImages(images, adventure.getUser().getId(), adventure);
-	}
+        if (!adventure.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
 
-	@Override
-	@Transactional
-	public void deleteImage(Long imageId, String email) {
-		AdventureImage image = imageRepository.findById(imageId)
-				.orElseThrow(() -> new RuntimeException("Image not found"));
+        List<AdventureImage> images = adventure.getImages();
+        if (images != null && !images.isEmpty()) {
+            for (AdventureImage image : images) {
+                cloudinaryService.deleteImage(image.getUrl());
+            }
+            imageRepository.deleteAll(images);
+        }
 
-		Adventure adventure = image.getAdventure();
-		if (!adventure.getUser().getEmail().equals(email)) {
-			throw new RuntimeException("Unauthorized");
-		}
+        adventureRepository.delete(adventure);
+    }
 
-		cloudinaryService.deleteImage(image.getUrl());
-		adventure.getImages().remove(image);
-		imageRepository.delete(image);
-	}
+    @Override
+    @Transactional
+    public void addImages(Long adventureId, List<MultipartFile> images, String email) {
+        Adventure adventure = adventureRepository.findById(adventureId)
+                .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
-	@Override
-	public List<AdventureDTO> getAdventuresByUser(String email) {
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+        if (!adventure.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
 
-		return adventureRepository.findByUser(user).stream()
-				.map(this::toDTO)
-				.collect(Collectors.toList());
-	}
+        uploadImages(images, adventure.getUser().getId(), adventure);
+    }
 
-	@Override
-	public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size) {
-		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+    @Override
+    @Transactional
+    public void deleteImage(Long imageId, String email) {
+        AdventureImage image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new RuntimeException("Image not found"));
 
-		Pageable pageable = PageRequest.of(page, size);
-		Page<Adventure> result = adventureRepository.findByUser(user, pageable);
+        Adventure adventure = image.getAdventure();
+        if (!adventure.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
 
-		return result.stream().map(this::toDTO).collect(Collectors.toList());
-	}
+        cloudinaryService.deleteImage(image.getUrl());
+        adventure.getImages().remove(image);
+        imageRepository.delete(image);
+    }
 
-	@Override
-	public AdventureDTO getAdventureById(Long id) {
-		Adventure adventure = adventureRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Adventure not found"));
+    @Override
+    public List<AdventureDTO> getAdventuresByUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-		return toDTO(adventure);
-	}
+        return adventureRepository.findByUser(user).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 
-	private void uploadImages(List<MultipartFile> images, Long userId, Adventure adventure) {
-		if (images == null || images.isEmpty()) {
-			return; // No images to upload
-		}
-		for (MultipartFile image : images) {
-			try {
-				String url = cloudinaryService.uploadImage(image, userId.toString(), adventure.getId().toString());
-				AdventureImage img = AdventureImage.builder()
-						.url(url)
-						.adventure(adventure)
-						.build();
-				imageRepository.save(img);
-				adventure.getImages().add(img);
-			} catch (IOException e) {
-				throw new RuntimeException("Image upload failed", e);
-			}
-		}
-	}
+//    @Override
+//    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String name) {
+//        User user = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        Pageable pageable = PageRequest.of(page, size);
+//        Page<Adventure> result = adventureRepository.findByUser(user, pageable);
+//
+//        return result.stream().map(this::toDTO).collect(Collectors.toList());
+//    }
+    @Override
+    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String location) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-	//    private AdventureDTO toDTO(Adventure adventure) {
-	//        return AdventureDTO.builder()
-	//                .id(adventure.getId())
-	//                .name(adventure.getName())
-	//                .location(adventure.getLocation())
-	//                .latitude(adventure.getGeoPoint().getY())
-	//                .longitude(adventure.getGeoPoint().getX())
-	//                .tags(adventure.getTags())
-	//                .rating(adventure.getRating())
-	//                .description(adventure.getDescription())
-	//                .link(adventure.getLink())
-	//                .imageUrls(
-	//                        adventure.getImages().stream()
-	//                                .map(AdventureImage::getUrl)
-	//                                .collect(Collectors.toList())
-	//                )
-	//                .build();
-	//    }
-	//    
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Adventure> result;
 
-	private AdventureDTO toDTO(Adventure adventure) {
-		return AdventureDTO.builder()
-				.id(adventure.getId())
-				.name(adventure.getName())
-				.location(adventure.getLocation())
-				.latitude(adventure.getGeoPoint().getY())
-				.longitude(adventure.getGeoPoint().getX())
-				.tags(adventure.getTags())
-				.rating(adventure.getRating())
-				.description(adventure.getDescription())
-				.link(adventure.getLink())
-				.imageUrls(
-						Objects.requireNonNullElse(adventure.getImages(), List.<AdventureImage>of())
-						.stream()
-						.map(AdventureImage::getUrl)
-						.collect(Collectors.toList())
-						)
-				.createdAt(adventure.getCreatedAt())
-				.updatedAt(adventure.getUpdatedAt())
-				.build();
-	}
+        if (location != null && !location.trim().isEmpty()) {
+            result = adventureRepository.findByUserAndNameContainingIgnoreCase(user, location, pageable);
+        } else {
+            result = adventureRepository.findByUser(user, pageable);
+        }
 
-	//
+        return result.stream().map(this::toDTO).collect(Collectors.toList());
+    }
+    
+    @Override
+    public AdventureDTO getAdventureById(Long id) {
+        Adventure adventure = adventureRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Adventure not found"));
+
+        return toDTO(adventure);
+    }
+
+    private void uploadImages(List<MultipartFile> images, Long userId, Adventure adventure) {
+        if (images == null || images.isEmpty()) {
+            return; // No images to upload
+        }
+        for (MultipartFile image : images) {
+            try {
+                String url = cloudinaryService.uploadImage(image, userId.toString(), adventure.getId().toString());
+                AdventureImage img = AdventureImage.builder()
+                        .url(url)
+                        .adventure(adventure)
+                        .build();
+                imageRepository.save(img);
+                adventure.getImages().add(img);
+            } catch (IOException e) {
+                throw new RuntimeException("Image upload failed", e);
+            }
+        }
+    }
+
+//    private AdventureDTO toDTO(Adventure adventure) {
+//        return AdventureDTO.builder()
+//                .id(adventure.getId())
+//                .name(adventure.getName())
+//                .location(adventure.getLocation())
+//                .latitude(adventure.getGeoPoint().getY())
+//                .longitude(adventure.getGeoPoint().getX())
+//                .tags(adventure.getTags())
+//                .rating(adventure.getRating())
+//                .description(adventure.getDescription())
+//                .link(adventure.getLink())
+//                .imageUrls(
+//                        adventure.getImages().stream()
+//                                .map(AdventureImage::getUrl)
+//                                .collect(Collectors.toList())
+//                )
+//                .build();
+//    }
+//    
+
+    private AdventureDTO toDTO(Adventure adventure) {
+        return AdventureDTO.builder()
+                .id(adventure.getId())
+                .name(adventure.getName())
+                .location(adventure.getLocation())
+                .latitude(adventure.getGeoPoint().getY())
+                .longitude(adventure.getGeoPoint().getX())
+                .tags(adventure.getTags())
+                .rating(adventure.getRating())
+                .description(adventure.getDescription())
+                .link(adventure.getLink())
+                .imageUrls(
+                    Objects.requireNonNullElse(adventure.getImages(), List.<AdventureImage>of())
+                           .stream()
+                           .map(AdventureImage::getUrl)
+                           .collect(Collectors.toList())
+                )
+                .createdAt(adventure.getCreatedAt())
+				        .updatedAt(adventure.getUpdatedAt())
+                .build();
+    }
+
+    //
+
 	@Override
 	public List<AdventureDTO> getRecentAdventures() {
 		return adventureRepository.findTopThreeByOrderByCreatedAtDesc().stream()
