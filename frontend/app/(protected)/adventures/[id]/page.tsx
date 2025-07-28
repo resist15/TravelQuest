@@ -36,8 +36,19 @@ import { format } from "date-fns";
 import clsx from "clsx";
 import { AdventureDTO } from "@/types/AdventureDTO";
 import { toast } from "react-toastify";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
+
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+
+import NextJsImage from "@/components/NextJsImage";
+import dynamic from "next/dynamic";
 
 export default function AdventureDetails() {
+  const Lightbox = dynamic(() => import("yet-another-react-lightbox"), { ssr: false });
+
   const { id } = useParams();
   const [adventure, setAdventure] = useState<AdventureDTO | null>(null);
   const [formState, setFormState] = useState<AdventureDTO | null>(null);
@@ -544,60 +555,18 @@ export default function AdventureDetails() {
           )}
         </div>
       </div>
+      <Lightbox
+        open={selectedIndex !== null}
+        close={() => setSelectedIndex(null)}
+        index={selectedIndex ?? 0}
+        slides={allImages.map((src) => ({
+          src
+        }))}
+        carousel={{ finite: true }}
+        render={{ slide: NextJsImage, thumbnail: NextJsImage }}
+        plugins={[Zoom, Thumbnails]}
+      />
 
-      <Dialog.Root open={selectedIndex !== null} onOpenChange={() => setSelectedIndex(null)}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/70 z-50 animate-in fade-in-0" />
-          <Dialog.Content
-            className="fixed inset-0 flex items-center justify-center z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-            ref={viewerRef}
-          >
-            <Dialog.Title>
-              <VisuallyHidden>Image Viewer</VisuallyHidden>
-            </Dialog.Title>
-            {selectedIndex !== null && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                className="relative max-w-4xl w-full max-h-screen"
-              >
-                <img
-                  src={allImages[selectedIndex]}
-                  alt="Selected"
-                  className="max-h-[90vh] max-w-[95vw] object-contain mx-auto"
-                  onError={() => {
-                    handleImageError(allImages[selectedIndex]);
-                    setSelectedIndex(null);
-                  }}
-                />
-                <Button
-                  variant="ghost"
-                  className="absolute top-4 right-4 text-white hover:bg-white/10"
-                  onClick={() => setSelectedIndex(null)}
-                >
-                  <X className="w-6 h-6" />
-                </Button>
-                <div className="absolute top-1/2 -translate-y-1/2 left-4">
-                  <Button variant="ghost" onClick={prevImage} disabled={selectedIndex === 0}>
-                    <ChevronLeft className="w-6 h-6 text-white" />
-                  </Button>
-                </div>
-                <div className="absolute top-1/2 -translate-y-1/2 right-4">
-                  <Button
-                    variant="ghost"
-                    onClick={nextImage}
-                    disabled={selectedIndex === allImages.length - 1}
-                  >
-                    <ChevronRight className="w-6 h-6 text-white" />
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="w-[90%] max-w-md rounded-lg p-6">
