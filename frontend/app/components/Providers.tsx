@@ -7,6 +7,8 @@ import Navbar from "./Navbar";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import LayoutWrapper from "@/components/LayoutWrapper";
+import { ToastProvider } from "@/components/ToastProvider";
+import { toast } from "react-toastify";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -39,6 +41,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       if (payload.exp < now) {
         localStorage.removeItem("token");
         router.replace("/login");
+        toast.info("Session expired. Please log in again.");
         return;
       }
     } catch (err) {
@@ -61,6 +64,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <main className="max-w-7xl mx-auto px-4 pt-6">
         {isProtected ? <LayoutWrapper>{children}</LayoutWrapper> : children}
       </main>
+      <ToastProvider />
     </ThemeProvider>
   );
 }

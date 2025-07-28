@@ -35,9 +35,20 @@ import axios from "@/lib/axios";
 import { format } from "date-fns";
 import clsx from "clsx";
 import { AdventureDTO } from "@/types/AdventureDTO";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
+
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+
+import NextJsImage from "@/components/NextJsImage";
+import dynamic from "next/dynamic";
 
 export default function AdventureDetails() {
+  const Lightbox = dynamic(() => import("yet-another-react-lightbox"), { ssr: false });
+
   const { id } = useParams();
   const [adventure, setAdventure] = useState<AdventureDTO | null>(null);
   const [formState, setFormState] = useState<AdventureDTO | null>(null);
@@ -50,8 +61,9 @@ export default function AdventureDetails() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [tagsInput, setTagsInput] = useState<string>("");
+  const [brokenImageUrls, setBrokenImageUrls] = useState<Set<string>>(new Set());
   const viewerRef = useRef<HTMLDivElement>(null);
-  const tagsInputRef = useRef<HTMLInputElement>(null); // Ref for focusing tags input
+  const tagsInputRef = useRef<HTMLInputElement>(null);
 
   const fetchLocationName = useCallback(async (lat: number, lon: number) => {
     try {
@@ -67,13 +79,13 @@ export default function AdventureDetails() {
     }
   }, []);
 
-
   useEffect(() => {
     const fetchAdventure = async () => {
       try {
         const res = await axios.get(`/api/adventures/${id}`);
         setAdventure(res.data);
-        setFormState(res.data); // Initialize formState with fetched data
+        setFormState(res.data);
+        setBrokenImageUrls(new Set());
       } catch (err) {
         setError(true);
       } finally {
@@ -83,7 +95,6 @@ export default function AdventureDetails() {
     fetchAdventure();
   }, [id]);
 
-  // Effect to fetch location name based on current coordinates
   useEffect(() => {
     const currentLat = editing ? formState?.latitude : adventure?.latitude;
     const currentLon = editing ? formState?.longitude : adventure?.longitude;
@@ -93,18 +104,16 @@ export default function AdventureDetails() {
     }
   }, [adventure, formState, editing, fetchLocationName]);
 
-  // Focus the tags input when entering editing mode
   useEffect(() => {
     if (editing && tagsInputRef.current) {
       tagsInputRef.current.focus();
     }
   }, [editing]);
 
-  // useCallback for commitTag to prevent re-creation on every render
   const commitTag = useCallback(() => {
-    const tagToCommit = tagsInput.trim().replace(/[^a-zA-Z0-9 ]/g, ""); // Sanitize here
+    const tagToCommit = tagsInput.trim().replace(/[^a-zA-Z0-9 ]/g, "");
     if (!tagToCommit) {
-      setTagsInput(""); // Clear input if empty or only special chars
+      setTagsInput("");
       return;
     }
 
@@ -119,57 +128,46 @@ export default function AdventureDetails() {
 
       if (!currentTags.includes(tagToCommit)) {
         const updatedTags = [...currentTags, tagToCommit];
-        // Enforce limit strictly when adding, but allow user to type more than 4 momentarily
         if (updatedTags.length > 4) {
           toast.warning("Tags are limited to 4. Excess tags were ignored.");
         }
-        setTagsInput(""); // Clear input after committing
-        return { ...prev!, tags: updatedTags.slice(0, 4) }; // Slice to ensure max 4
+        setTagsInput("");
+        return { ...prev!, tags: updatedTags.slice(0, 4) };
       } else {
         toast.info(`Tag '${tagToCommit}' already exists.`);
-        setTagsInput(""); // Clear input even if tag exists
+        setTagsInput("");
         return prev;
       }
     });
-  }, [tagsInput]); // Depend on tagsInput to get its latest value
+  }, [tagsInput]);
 
-  // Handle live input changes for tags
   const handleTagInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
-    // Allow alphanumeric characters, spaces, and a single comma (for immediate commit)
     const sanitized = input.replace(/[^a-zA-Z0-9, ]/g, "");
 
-    // If a comma is typed, commit the tag
     if (sanitized.endsWith(",")) {
-      setTagsInput(sanitized.slice(0, -1)); // Remove the comma for commit
+      setTagsInput(sanitized.slice(0, -1));
       commitTag();
     } else {
       setTagsInput(sanitized);
     }
   }, [commitTag]);
 
-  // Handle key presses for tags input (e.g., Enter, Backspace)
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Prevent form submission
+      e.preventDefault();
       commitTag();
     }
-    // Allow backspace to remove the last tag if input is empty
     if (e.key === "Backspace" && tagsInput === "" && formState?.tags && formState.tags.length > 0) {
       e.preventDefault();
       setFormState(prev => {
         const updatedTags = [...prev!.tags];
-        const removedTag = updatedTags.pop();
-        if (removedTag) {
-          // Option to put the removed tag back into the input for quick re-edit
-          // setTagsInput(removedTag);
-        }
+        updatedTags.pop();
         return { ...prev!, tags: updatedTags };
       });
     }
   }, [tagsInput, commitTag, formState]);
 
-  // Handle removing a tag by clicking its X button
   const handleRemoveTag = useCallback((tagToRemove: string) => {
     setFormState(prev => {
       if (!prev || !prev.tags) return prev;
@@ -178,49 +176,37 @@ export default function AdventureDetails() {
     });
   }, []);
 
-  // Handle saving adventure details
   const handleSaveAdventureDetails = async () => {
     if (!formState) return;
 
-    // Commit any remaining text in tagsInput before saving
     if (tagsInput.trim()) {
-      commitTag(); // This will update formState.tags
+      commitTag();
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // IMPORTANT: Create a new object for finalFormState from the latest formState,
-    // as commitTag updates formState asynchronously.
-    // If commitTag changes formState, you need to ensure you're using the LATEST state
-    // for the payload. Using a functional update here is safer.
-    setFormState(prevFormState => {
-      if (!prevFormState) return null; // Should not happen
+    const currentState = {
+      ...formState,
+      tags: formState.tags?.slice(0, 4) || [],
+    };
 
-      const finalFormState = {
-        ...prevFormState,
-        tags: prevFormState.tags, // This should now hold the committed tags
-      };
+    const formData = new FormData();
+    formData.append("data", new Blob([JSON.stringify(currentState)], { type: "application/json" }));
 
-      const formData = new FormData();
-      formData.append("data", new Blob([JSON.stringify(finalFormState)], { type: "application/json" }));
-
-      axios.put(`/api/adventures/${finalFormState.id}`, formData, {
+    try {
+      const res = await axios.put(`/api/adventures/${currentState.id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
-      })
-        .then(res => {
-          setAdventure(res.data);
-          setFormState(res.data);
-          setEditing(false);
-          toast.success("Adventure details saved successfully!");
-        })
-        .catch(error => {
-          console.error("Update adventure details failed", error);
-          toast.error("Failed to save adventure details.");
-        });
+      });
 
-      return prevFormState; // Return current state; actual update handled by .then
-    });
+      setAdventure(res.data);
+      setFormState(res.data);
+      setEditing(false);
+      toast.success("Adventure details saved successfully!");
+    } catch (error) {
+      console.error("Update adventure details failed", error);
+      toast.error("Failed to save adventure details.");
+    }
   };
 
-  // Handle uploading new images
   const handleUploadNewImages = async () => {
     if (!photosToUpload.length || !adventure?.id) return;
 
@@ -239,14 +225,24 @@ export default function AdventureDetails() {
       setPhotosToUpload([]);
       setUploadingPhotos(false);
       toast.success("Images uploaded successfully!");
+      setBrokenImageUrls(new Set());
     } catch (error) {
       console.error("Image upload failed", error);
       toast.error("Failed to upload images.");
     }
   };
 
+  const handleImageError = useCallback((url: string) => {
+    setBrokenImageUrls(prev => new Set(prev).add(url));
+    // toast.error(`Image failed to load: ${url.substring(0, 50)}...`);
+  }, []);
+
+  const validAdventureImageUrls = (adventure?.imageUrls || []).filter(
+    (url) => !brokenImageUrls.has(url)
+  );
+
   const allImages = [
-    ...(adventure?.imageUrls || []),
+    ...validAdventureImageUrls,
     ...photosToUpload.map(file => URL.createObjectURL(file)),
   ];
 
@@ -471,7 +467,6 @@ export default function AdventureDetails() {
         {editing ? (
           <textarea
             className="w-full border p-3 rounded-lg min-h-[120px] focus:ring-2 focus:ring-primary-foreground transition-all"
-
             value={formState?.description || ""}
             onChange={e =>
               setFormState(prev => ({ ...prev!, description: e.target.value }))
@@ -531,7 +526,7 @@ export default function AdventureDetails() {
           {allImages.length > 0 ? (
             allImages.map((src, idx) => (
               <motion.div
-                key={idx}
+                key={src + idx}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ scale: 1.03 }}
@@ -546,6 +541,7 @@ export default function AdventureDetails() {
                       src={src}
                       alt={`Adventure Image ${idx}`}
                       className="w-full h-full object-cover rounded transition-transform duration-300 group-hover:scale-105"
+                      onError={() => handleImageError(src)}
                     />
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                       <span className="text-white text-sm">View</span>
@@ -559,56 +555,18 @@ export default function AdventureDetails() {
           )}
         </div>
       </div>
+      <Lightbox
+        open={selectedIndex !== null}
+        close={() => setSelectedIndex(null)}
+        index={selectedIndex ?? 0}
+        slides={allImages.map((src) => ({
+          src
+        }))}
+        carousel={{ finite: true }}
+        render={{ slide: NextJsImage, thumbnail: NextJsImage }}
+        plugins={[Zoom, Thumbnails]}
+      />
 
-      <Dialog.Root open={selectedIndex !== null} onOpenChange={() => setSelectedIndex(null)}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/70 z-50 animate-in fade-in-0" />
-          <Dialog.Content
-            className="fixed inset-0 flex items-center justify-center z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-            ref={viewerRef}
-          >
-            <Dialog.Title>
-              <VisuallyHidden>Image Viewer</VisuallyHidden>
-            </Dialog.Title>
-            {selectedIndex !== null && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-                className="relative max-w-4xl w-full max-h-screen"
-              >
-                <img
-                  src={allImages[selectedIndex]}
-                  alt="Selected"
-                  className="max-h-[90vh] max-w-[95vw] object-contain mx-auto"
-                />
-                <Button
-                  variant="ghost"
-                  className="absolute top-4 right-4 text-white hover:bg-white/10"
-                  onClick={() => setSelectedIndex(null)}
-                >
-                  <X className="w-6 h-6" />
-                </Button>
-                <div className="absolute top-1/2 -translate-y-1/2 left-4">
-                  <Button variant="ghost" onClick={prevImage} disabled={selectedIndex === 0}>
-                    <ChevronLeft className="w-6 h-6 text-white" />
-                  </Button>
-                </div>
-                <div className="absolute top-1/2 -translate-y-1/2 right-4">
-                  <Button
-                    variant="ghost"
-                    onClick={nextImage}
-                    disabled={selectedIndex === allImages.length - 1}
-                  >
-                    <ChevronRight className="w-6 h-6 text-white" />
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="w-[90%] max-w-md rounded-lg p-6">
