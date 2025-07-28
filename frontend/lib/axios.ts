@@ -7,18 +7,24 @@ const api = axios.create({
   },
 });
 
+// Attach token from localStorage to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
+// Skip logout redirect on /api/auth/login failure
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const requestUrl = err.config?.url || "";
+    const isLoginRequest = requestUrl.endsWith("/api/auth/login");
+
+    if (err.response?.status === 401 && !isLoginRequest) {
       logoutAndRedirect();
     }
+
     return Promise.reject(err);
   }
 );
@@ -29,4 +35,3 @@ function logoutAndRedirect() {
 }
 
 export default api;
-

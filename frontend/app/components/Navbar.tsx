@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import api from "@/lib/axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { AxiosError } from "axios";
+import { toast } from "react-toastify";
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -65,6 +66,7 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     router.replace("/login");
+    toast.success("Logout successful!");
   };
 
   return (

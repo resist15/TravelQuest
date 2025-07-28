@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import axios from "@/lib/axios";
+import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,8 +17,9 @@ export default function LoginPage() {
       const res = await axios.post("/api/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
       router.push("/");
+      toast.success("Login successful!");
     } catch (err) {
-      alert("Invalid login");
+      toast.error("Invalid email or password");
     }
   };
 

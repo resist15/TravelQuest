@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import axios from "@/lib/axios";
 import clsx from "clsx";
@@ -107,8 +107,8 @@ export default function NewAdventurePage() {
       await axios.post("/api/adventures", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toast.success("Adventure added!");
       router.push("/adventures");
+      toast.success("Adventure added!");
     } catch (err) {
       console.error(err);
       toast.error("Error adding adventure.");
