@@ -275,7 +275,6 @@ public class AdventureServiceImpl implements AdventureService {
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
-		// Default sort fallback
 		String sortField = switch (sortBy.toLowerCase()) {
 		case "name", "rating", "createdAt", "updatedAt" -> sortBy;
 		default -> "createdAt";

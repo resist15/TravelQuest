@@ -22,5 +22,6 @@ public class AdventureDTO {
     //
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long collectionId;
     //
 }

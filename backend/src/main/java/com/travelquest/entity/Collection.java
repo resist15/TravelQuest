@@ -1,5 +1,6 @@
 package com.travelquest.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +9,6 @@ import org.locationtech.jts.geom.Point;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -26,37 +26,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "adventures")
+@Table(name = "collections")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Adventure {
+public class Collection {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
-    private String location;
-    private double rating;
     private String description;
-    private String link;
-
-    @ElementCollection
-    private List<String> tags;
-
-    @Column(columnDefinition = "geometry(Point,4326)")
-    private Point geoPoint;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    @OneToMany(mappedBy = "adventure", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AdventureImage> images = new ArrayList<>();
+    private String coverImage;
     
-    //
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -75,8 +59,11 @@ public class Adventure {
     }
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "collection_id", nullable=true)
-    private Collection collection;
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    //
+    @OneToMany(mappedBy = "collection", cascade = CascadeType.PERSIST)
+    private List<Adventure> adventures = new ArrayList<>();
+
+    
 }

@@ -1,0 +1,84 @@
+package com.travelquest.controllers;
+
+import java.nio.file.AccessDeniedException;
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import com.travelquest.dto.CollectionDTO;
+import com.travelquest.services.CollectionService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/collections")
+@RequiredArgsConstructor
+public class CollectionController {
+
+    private final CollectionService collectionService;
+
+    @PostMapping
+    public ResponseEntity<CollectionDTO> createCollection(
+            @RequestBody CollectionDTO dto,
+            Authentication auth) {
+        CollectionDTO created = collectionService.createCollection(auth.getName(), dto);
+        return ResponseEntity.ok(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CollectionDTO> updateCollection(
+            @PathVariable Long id,
+            @RequestBody CollectionDTO dto) {
+        return ResponseEntity.ok(collectionService.updateCollection(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCollection(@PathVariable Long id, Authentication auth) throws AccessDeniedException {
+        collectionService.deleteCollection(id, auth.getName());
+        return ResponseEntity.noContent().build();
+    }
+    
+    @DeleteMapping("/{collectionId}/adventures/{adventureId}")
+    public ResponseEntity<Void> removeAdventureFromCollection(
+            @PathVariable Long collectionId,
+            @PathVariable Long adventureId,
+            Authentication auth
+    ) throws AccessDeniedException {
+        collectionService.removeAdventureFromCollection(collectionId, adventureId, auth.getName());
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @GetMapping
+    public ResponseEntity<List<CollectionDTO>> getAllCollections(Authentication auth) {
+        return ResponseEntity.ok(collectionService.getCollectionsByUser(auth.getName()));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CollectionDTO> getCollectionById(@PathVariable Long id, Authentication auth) throws AccessDeniedException {
+        return ResponseEntity.ok(collectionService.getCollectionById(id, auth.getName()));
+    }
+    
+    @PostMapping("/{collectionId}/adventures/{adventureId}")
+    public ResponseEntity<Void> addAdventureToCollection(
+            @PathVariable Long collectionId,
+            @PathVariable Long adventureId,
+            Authentication auth
+    ) throws AccessDeniedException {
+        collectionService.addAdventureToCollection(collectionId, adventureId, auth.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<CollectionDTO>> getMyCollectionsPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            Authentication auth
+    ) {
+        List<CollectionDTO> collections = collectionService.getCollectionsByUserPaginated(auth.getName(), page, size);
+        return ResponseEntity.ok(collections);
+    }
+
+}
