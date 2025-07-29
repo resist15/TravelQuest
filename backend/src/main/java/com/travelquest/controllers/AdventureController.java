@@ -6,10 +6,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.DashboardStatsDTO;
+import com.travelquest.dto.PageResponseDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.services.AdventureService;
 
@@ -80,16 +84,18 @@ public class AdventureController {
 //        return ResponseEntity.ok(paginatedAdventures);
 //    }
     @GetMapping("/my")
-    public ResponseEntity<List<AdventureDTO>> getMyAdventures(
+    public ResponseEntity<PageResponseDTO<AdventureDTO>> getMyAdventures(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int size,
             @RequestParam(required = false) String name,
             Authentication auth) {
-        List<AdventureDTO> adventures = adventureService.getAdventuresByUserPaginated(
-            auth.getName(), page, size, name
+
+        PageResponseDTO<AdventureDTO> adventures = adventureService.getAdventuresByUserPaginated(
+                auth.getName(), page, size, name
         );
         return ResponseEntity.ok(adventures);
     }
+
     
     @GetMapping("/{id}")
     public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id,Authentication auth) throws ResourceNotFoundException {
@@ -110,6 +116,15 @@ public class AdventureController {
     ) {
         List<AdventureDTO> sorted = adventureService.getAdventuresSorted(auth.getName(), sortBy, order);
         return ResponseEntity.ok(sorted);
+    }
+    
+    
+ 
+    @GetMapping("/stats")
+    public ResponseEntity<DashboardStatsDTO> getDashboardStats(Authentication authentication) {
+        String email = authentication.getName(); // Extract logged-in user's email
+        DashboardStatsDTO stats = adventureService.getDashboardStats(email);
+        return ResponseEntity.ok(stats);
     }
     //
 }

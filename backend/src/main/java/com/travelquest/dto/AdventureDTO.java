@@ -18,6 +18,10 @@ public class AdventureDTO {
     private String link;
     private double latitude;
     private double longitude;
+    private String country;
+    private String region;
+    private String city;
+
     private List<String> imageUrls;
     //
     private LocalDateTime createdAt;

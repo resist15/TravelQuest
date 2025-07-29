@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.DashboardStatsDTO;
+import com.travelquest.dto.PageResponseDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
 import com.travelquest.entity.User;
@@ -52,6 +54,9 @@ public class AdventureServiceImpl implements AdventureService {
         Adventure adventure = Adventure.builder()
                 .name(dto.getName())
                 .location(dto.getLocation())
+                .country(dto.getCountry())
+                .region(dto.getRegion())
+                .city(dto.getCity())
                 .tags(dto.getTags())
                 .description(dto.getDescription())
                 .link(dto.getLink())
@@ -79,7 +84,12 @@ public class AdventureServiceImpl implements AdventureService {
         adventure.setDescription(dto.getDescription());
         adventure.setLink(dto.getLink());
         adventure.setRating(dto.getRating());
-		    adventure.setUpdatedAt(LocalDateTime.now());
+		 adventure.setUpdatedAt(LocalDateTime.now());
+		 
+		 
+		 adventure.setCountry(dto.getCountry());
+		 adventure.setRegion(dto.getRegion());
+		 adventure.setCity(dto.getCity());
 
         Point point = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
         point.setSRID(4326);
@@ -175,8 +185,26 @@ public class AdventureServiceImpl implements AdventureService {
 //
 //        return result.stream().map(this::toDTO).collect(Collectors.toList());
 //    }
+//    @Override
+//    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String location) {
+//        User user = userRepository.findByEmail(email)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        Pageable pageable = PageRequest.of(page, size);
+//        Page<Adventure> result;
+//
+//        if (location != null && !location.trim().isEmpty()) {
+//            result = adventureRepository.findByUserAndNameContainingIgnoreCase(user, location, pageable);
+//        } else {
+//            result = adventureRepository.findByUser(user, pageable);
+//        }
+//
+//        return result.stream().map(this::toDTO).collect(Collectors.toList());
+//    }
+    
+    
     @Override
-    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String location) {
+    public PageResponseDTO<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String location) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -189,8 +217,18 @@ public class AdventureServiceImpl implements AdventureService {
             result = adventureRepository.findByUser(user, pageable);
         }
 
-        return result.stream().map(this::toDTO).collect(Collectors.toList());
+        List<AdventureDTO> content = result.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+
+        return new PageResponseDTO<>(
+                content,
+                result.getNumber(),
+                result.getTotalPages(),
+                result.getTotalElements()
+        );
     }
+
     
     @Override
     public AdventureDTO getAdventureById(Long id) {
@@ -246,6 +284,9 @@ public class AdventureServiceImpl implements AdventureService {
                 .location(adventure.getLocation())
                 .latitude(adventure.getGeoPoint().getY())
                 .longitude(adventure.getGeoPoint().getX())
+                .country(adventure.getCountry())
+                .region(adventure.getRegion())
+                .city(adventure.getCity())
                 .tags(adventure.getTags())
                 .rating(adventure.getRating())
                 .description(adventure.getDescription())
@@ -263,12 +304,7 @@ public class AdventureServiceImpl implements AdventureService {
 
     //
 
-	@Override
-	public List<AdventureDTO> getRecentAdventures() {
-		return adventureRepository.findTopThreeByOrderByCreatedAtDesc().stream()
-				.map(this::toDTO)
-				.collect(Collectors.toList());
-	}
+	
 
 	@Override
 	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order) {
@@ -289,5 +325,30 @@ public class AdventureServiceImpl implements AdventureService {
 				.collect(Collectors.toList());
 
 	}
-	//
+	@Override
+	public List<AdventureDTO> getRecentAdventures() {
+	    return adventureRepository.findTop3ByOrderByCreatedAtDesc().stream()
+	            .map(this::toDTO)
+	            .collect(Collectors.toList());
+	}
+	
+	
+	@Override
+	public DashboardStatsDTO getDashboardStats(String email) {
+	    User user = userRepository.findByEmail(email)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+
+	    long totalAdventures = adventureRepository.countByUserId(user.getId());
+	    long countriesVisited = adventureRepository.countDistinctCountriesByUser(user.getId());
+	    long regionsVisited = adventureRepository.countDistinctRegionsByUser(user.getId());
+	    long citiesVisited = adventureRepository.countDistinctCitiesByUser(user.getId());
+
+	    return new DashboardStatsDTO(
+	            totalAdventures,
+	            countriesVisited,
+	            regionsVisited,
+	            citiesVisited
+	    );
+	}
+
 }

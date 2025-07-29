@@ -5,6 +5,9 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.DashboardStatsDTO;
+import com.travelquest.dto.PageResponseDTO;
+import com.travelquest.entity.Adventure;
 import com.travelquest.exceptions.ResourceNotFoundException;
 
 public interface AdventureService {
@@ -15,10 +18,14 @@ public interface AdventureService {
     void deleteImage(Long imageId, String email);
     List<AdventureDTO> getAdventuresByUser(String email);
     AdventureDTO getAdventureByIdAndEmail(Long id,String email) throws ResourceNotFoundException;
-    List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size,String name);
+    PageResponseDTO<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String name);
+
     AdventureDTO getAdventureById(Long id);
     //
     List<AdventureDTO> getRecentAdventures();
     List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order);
-    //
+  
+    DashboardStatsDTO getDashboardStats(String email);
+
+    
 }

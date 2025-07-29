@@ -1,4 +1,5 @@
 "use client";
+import { getDashboardStats } from "@/lib/dashboardService";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
@@ -201,6 +202,13 @@ export default function AdventureDetails() {
       setFormState(res.data);
       setEditing(false);
       toast.success("Adventure details saved successfully!");
+      // 🔄 Refresh dashboard stats after update
+try {
+  await getDashboardStats();
+} catch (error) {
+  console.error("Failed to refresh dashboard stats after update:", error);
+}
+
     } catch (error) {
       console.error("Update adventure details failed", error);
       toast.error("Failed to save adventure details.");
@@ -279,6 +287,13 @@ export default function AdventureDetails() {
     try {
       await axios.delete(`/api/adventures/${adventure.id}`);
       toast.success("Adventure deleted successfully!");
+      // 🔄 Refresh dashboard stats after deletion
+try {
+  await getDashboardStats();
+} catch (error) {
+  console.error("Failed to refresh dashboard stats after delete:", error);
+}
+
       window.location.href = "/adventures";
     } catch (error) {
       console.error("Failed to delete adventure:", error);

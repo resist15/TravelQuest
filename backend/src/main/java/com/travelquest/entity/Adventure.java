@@ -49,6 +49,20 @@ public class Adventure {
     @Column(columnDefinition = "geometry(Point,4326)")
     private Point geoPoint;
 
+    
+    
+    @Column(length = 100)
+    private String country;
+
+    @Column(length = 100)
+    private String region;
+
+    @Column(length = 100)
+    private String city;
+    
+    
+    
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
