@@ -12,7 +12,7 @@ public interface AdventureService {
     AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages);
     public void deleteAdventure(Long adventureId, String email);
     void addImages(Long adventureId, List<MultipartFile> images, String email);
-    void deleteImage(Long imageId, String email);
+    void deleteImage(Long adventureId, String imageId, String email);
     List<AdventureDTO> getAdventuresByUser(String email);
     AdventureDTO getAdventureByIdAndEmail(Long id,String email) throws ResourceNotFoundException;
     List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size,String name);

@@ -2,6 +2,7 @@ package com.travelquest.services;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -127,22 +128,48 @@ public class AdventureServiceImpl implements AdventureService {
         uploadImages(images, adventure.getUser().getId(), adventure);
     }
 
+//    @Override
+//    @Transactional
+//    public void deleteImage(String imageId, String email) {
+//        AdventureImage image = imageRepository.findById(imageId)
+//                .orElseThrow(() -> new RuntimeException("Image not found"));
+//
+//        Adventure adventure = image.getAdventure();
+//        if (!adventure.getUser().getEmail().equals(email)) {
+//            throw new AccessDeniedException("Unauthorized");
+//        }
+//
+//        cloudinaryService.deleteImage(image.getUrl());
+//        adventure.getImages().remove(image);
+//        imageRepository.delete(image);
+//    }
+
     @Override
     @Transactional
-    public void deleteImage(Long imageId, String email) {
-        AdventureImage image = imageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found"));
+    public void deleteImage(Long adventureId, String imageUrl, String email) {
+        Adventure adventure = adventureRepository.findById(adventureId)
+                .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
-        Adventure adventure = image.getAdventure();
         if (!adventure.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
         }
 
-        cloudinaryService.deleteImage(image.getUrl());
-        adventure.getImages().remove(image);
-        imageRepository.delete(image);
-    }
+        List<AdventureImage> images = adventure.getImages();
+        if (images != null && !images.isEmpty()) {
+            for (Iterator<AdventureImage> iterator = images.iterator(); iterator.hasNext(); ) {
+                AdventureImage image = iterator.next();
+                if (image.getUrl().equals(imageUrl)) {
+                    System.out.println("Found image to delete");
+                    cloudinaryService.deleteImage(image.getUrl());
+                    iterator.remove(); // THIS is key - removes from list
+                    break;
+                }
+            }
+        }
 
+        adventureRepository.save(adventure);
+    }
+    
     @Override
     public List<AdventureDTO> getAdventuresByUser(String email) {
         User user = userRepository.findByEmail(email)

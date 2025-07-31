@@ -65,6 +65,10 @@ export default function AdventureDetails() {
   const viewerRef = useRef<HTMLDivElement>(null);
   const tagsInputRef = useRef<HTMLInputElement>(null);
 
+  // New state for image deletion
+  const [imageToDelete, setImageToDelete] = useState<string | null>(null);
+  const [showImageDeleteDialog, setShowImageDeleteDialog] = useState(false);
+
   const fetchLocationName = useCallback(async (lat: number, lon: number) => {
     try {
       const res = await fetch(
@@ -288,6 +292,26 @@ export default function AdventureDetails() {
     }
   };
 
+  const handleDeleteImage = async () => {
+    if (!imageToDelete || !adventure?.id) return;
+
+    try {
+      // await axios.delete(`/api/adventures/${adventure.id}/${imageToDelete}`);
+      await axios.delete(`/api/adventures/image/${adventure.id}?imageUrl=${encodeURIComponent(imageToDelete)}`);
+
+      const updatedAdventureRes = await axios.get(`/api/adventures/${adventure.id}`);
+      setAdventure(updatedAdventureRes.data);
+      setFormState(updatedAdventureRes.data);
+      toast.success("Image deleted successfully!");
+    } catch (error) {
+      console.error("Failed to delete image:", error);
+      toast.error("Failed to delete image.");
+    } finally {
+      setShowImageDeleteDialog(false);
+      setImageToDelete(null);
+    }
+  };
+
   const currentCoordinates = editing
     ? [formState?.longitude, formState?.latitude]
     : [adventure?.longitude, adventure?.latitude];
@@ -329,7 +353,7 @@ export default function AdventureDetails() {
             className="gap-1"
           >
             <Trash2 className="w-4 h-4" />
-            Delete
+            Delete Adventure
           </Button>
 
           <Button
@@ -533,7 +557,8 @@ export default function AdventureDetails() {
                 transition={{ duration: 0.2 }}
               >
                 <Card
-                  onClick={() => setSelectedIndex(idx)}
+                  // Changed onClick to only open lightbox if not in editing mode
+                  onClick={() => !editing && setSelectedIndex(idx)}
                   className="cursor-pointer overflow-hidden aspect-video relative group"
                 >
                   <CardContent className="p-0">
@@ -544,7 +569,22 @@ export default function AdventureDetails() {
                       onError={() => handleImageError(src)}
                     />
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <span className="text-white text-sm">View</span>
+                      {!editing ? (
+                        <span className="text-white text-sm">View</span>
+                      ) : (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="h-8 w-8 rounded-full"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent opening lightbox
+                            setImageToDelete(src);
+                            setShowImageDeleteDialog(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -580,6 +620,24 @@ export default function AdventureDetails() {
             </AlertDialogCancel>
             <AlertDialogAction asChild>
               <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* New AlertDialog for image deletion confirmation */}
+      <AlertDialog open={showImageDeleteDialog} onOpenChange={setShowImageDeleteDialog}>
+        <AlertDialogContent className="w-[90%] max-w-md rounded-lg p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold">Delete Image?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <p className="text-muted-foreground text-sm mt-2">Are you sure you want to delete this image? This action cannot be undone.</p>
+          <AlertDialogFooter className="mt-6 flex justify-end gap-3">
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleDeleteImage}>Delete Image</Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
