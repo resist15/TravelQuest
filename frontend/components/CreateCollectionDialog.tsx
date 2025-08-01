@@ -12,41 +12,71 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { DatePicker } from "@/components/DatePicker";
-
-const dummyAdventures = [
-  { id: "1", name: "Paris Exploration" },
-  { id: "2", name: "Tokyo Nights" },
-  { id: "3", name: "Rome City Walks" },
-];
+import axios from "@/lib/axios";
+import { AdventureDTO } from "@/types/AdventureDTO";
+import { toast } from "react-toastify";
 
 export default function CreateCollectionDialog() {
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedAdventures, setSelectedAdventures] = useState<string[]>([]);
+  const [selectedAdventures, setSelectedAdventures] = useState<number[]>([]);
+  const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    location: "",
     startDate: undefined as Date | undefined,
     endDate: undefined as Date | undefined,
   });
 
-  const toggleSelect = (id: string) => {
+  useEffect(() => {
+    const fetchAdventures = async () => {
+      try {
+        const res = await axios.get("/api/adventures?unassignedOnly=true");
+        setAdventures(res.data);
+      } catch (err) {
+        console.error("Failed to fetch adventures", err);
+      }
+    };
+    fetchAdventures();
+  }, []);
+
+  const toggleSelect = (id: number) => {
     setSelectedAdventures((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
   };
 
-  const handleCreate = () => {
-    const data = {
+  const handleCreate = async () => {
+    const payload = {
       ...formData,
-      adventures: selectedAdventures,
+      startDate: formData.startDate?.toISOString(),
+      endDate: formData.endDate?.toISOString(),
+      existingAdventureIds: selectedAdventures,
     };
-    console.log("Collection created:", data);
-    alert("Collection created! See console.");
+    console.log(payload)
+    try {
+      await axios.post("/api/collections", payload);
+      toast.success("Collection created!");
+
+      setFormData({
+        name: "",
+        description: "",
+        startDate: undefined,
+        endDate: undefined,
+      });
+
+      setSelectedAdventures([]);
+      setStep(1);
+
+      const res = await axios.get("/api/adventures?unassignedOnly=true");
+      setAdventures(res.data);
+    } catch (err) {
+      console.error("Failed to create collection", err);
+      toast.error("Collection created!");
+    }
   };
 
   return (
@@ -65,7 +95,7 @@ export default function CreateCollectionDialog() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 max-h-64 overflow-y-auto mt-2">
-              {dummyAdventures.map((adv) => (
+              {adventures.map((adv) => (
                 <div
                   key={adv.id}
                   className="flex items-center justify-between border rounded-lg px-3 py-2"
@@ -78,11 +108,11 @@ export default function CreateCollectionDialog() {
                 </div>
               ))}
             </div>
-            <Button
-              className="mt-4 w-full"
-              disabled={selectedAdventures.length === 0}
-              onClick={() => setStep(2)}
-            >
+              <Button
+                className="mt-4 w-full"
+                disabled={selectedAdventures.length === 0}
+                onClick={() => setStep(2)}
+              >
               Continue
             </Button>
           </>
@@ -111,16 +141,6 @@ export default function CreateCollectionDialog() {
                   setFormData((prev) => ({
                     ...prev,
                     description: e.target.value,
-                  }))
-                }
-              />
-              <Input
-                placeholder="Location"
-                value={formData.location}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    location: e.target.value,
                   }))
                 }
               />
@@ -167,5 +187,5 @@ export default function CreateCollectionDialog() {
         )}
       </DialogContent>
     </Dialog>
-  );
+  );  
 }

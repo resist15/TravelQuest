@@ -34,7 +34,6 @@ export default function AdventureCard({ adventure }: AdventureCardProps) {
       );
 
       const place = regionFeature?.place_name || subregionFeature?.place_name || "Unknown location";
-      console.log(data);
       setLocationName(place);
     } catch (err) {
       console.error("Failed to reverse geocode:", err);

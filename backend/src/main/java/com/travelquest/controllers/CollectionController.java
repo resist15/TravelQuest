@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.travelquest.dto.CollectionDTO;
+import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.services.CollectionService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class CollectionController {
     @PostMapping
     public ResponseEntity<CollectionDTO> createCollection(
             @RequestBody CollectionDTO dto,
-            Authentication auth) {
+            Authentication auth) throws ResourceNotFoundException {
         CollectionDTO created = collectionService.createCollection(auth.getName(), dto);
         return ResponseEntity.ok(created);
     }

@@ -65,8 +65,8 @@ public class AdventureController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AdventureDTO>> getAdventuresByUser(Authentication auth) {
-        List<AdventureDTO> list = adventureService.getAdventuresByUser(auth.getName());
+    public ResponseEntity<List<AdventureDTO>> getAdventuresByUser(@RequestParam(defaultValue = "false") boolean unassignedOnly, Authentication auth) {
+        List<AdventureDTO> list = adventureService.getAdventuresByUser(auth.getName(),unassignedOnly);
         return ResponseEntity.ok(list);
     }
     
