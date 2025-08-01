@@ -1,85 +1,149 @@
 "use client";
 
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-
-interface TravelEvent {
-  title: string;
-  date: Date;
-  status: "planned" | "completed";
-}
-
-const dummyEvents: TravelEvent[] = [
-  { title: "Goa Trip", date: new Date(2025, 6, 25), status: "planned" },
-  { title: "Shimla Trek", date: new Date(2025, 6, 20), status: "completed" },
-  { title: "Kerala Tour", date: new Date(2025, 6, 27), status: "planned" },
-  { title: "Manali Adventure", date: new Date(2025, 6, 20), status: "completed" },
-];
+import { format } from "date-fns";
+import { AdventureDTO } from "@/types/AdventureDTO";
+import axios from "@/lib/axios"; // your axios instance
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function CalendarPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [open, setOpen] = useState(false);
+  const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [filteredAdventures, setFilteredAdventures] = useState<AdventureDTO[]>([]);
+  const router = useRouter();
 
-  const eventsForDate = dummyEvents.filter(
-    (event) =>
-      selectedDate &&
-      event.date.toDateString() === selectedDate.toDateString()
-  );
+  useEffect(() => {
+    const fetchAdventures = async () => {
+      try {
+        const res = await axios.get<AdventureDTO[]>("/api/adventures");
+        setAdventures(res.data);
+      } catch (err) {
+        console.error("Failed to fetch adventures", err);
+      }
+    };
+
+    fetchAdventures();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setFilteredAdventures([]);
+      return;
+    }
+
+    const selected = format(selectedDate, "yyyy-MM-dd");
+    const filtered = adventures.filter((adv) =>
+      format(new Date(adv.createdAt), "yyyy-MM-dd") === selected
+    );
+    setFilteredAdventures(filtered);
+  }, [selectedDate, adventures]);
+
+  const recentAdventures = adventures
+    .slice()
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
+
+  const getMarkedDates = () =>
+    new Set(adventures.map((adv) => format(new Date(adv.createdAt), "yyyy-MM-dd")));
+
+  const markedDates = getMarkedDates();
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground flex flex-col">
-      <header className="p-4 border-b shadow-sm bg-card">
-        <h1 className="text-3xl font-bold text-center">📅 Travel Calendar</h1>
-      </header>
-
-      <main className="flex-1 flex justify-center items-center px-2 py-4">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <div className="w-full max-w-6xl bg-card p-4 rounded-lg shadow-lg">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => {
-                setSelectedDate(date);
-                setOpen(true);
-              }}
-              className="w-full"
+    <div className="flex flex-col lg:flex-row gap-6 p-6">
+      {/* Left Column */}
+      <div className="w-full lg:w-1/3 space-y-4">
+        <h2 className="text-xl font-semibold">Recent Adventures</h2>
+        {recentAdventures.map((adv) => (
+          <motion.div
+            key={adv.id}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.05 }}
+            onClick={() => router.push(`/adventures/${adv.id}`)}
+            className="cursor-pointer rounded-xl border shadow-sm overflow-hidden hover:shadow-md transition-all"
+          >
+            <Image
+              src={adv.imageUrls[0] || "/adventure_place.webp"}
+              alt={adv.name}
+              width={500}
+              height={300}
+              className="w-full h-48 object-cover"
             />
-          </div>
+            <div className="p-4">
+              <h3 className="text-lg font-medium">{adv.name}</h3>
+              <p className="text-muted-foreground text-sm">{adv.location}</p>
+              <p className="text-xs text-gray-500 mt-1">{format(new Date(adv.createdAt), "PPP")}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
 
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                Events on {selectedDate?.toDateString()}
-              </DialogTitle>
-            </DialogHeader>
+      {/* Right Column */}
+      <div className="w-full lg:w-2/3 space-y-4">
+        <h2 className="text-xl font-semibold">Adventure Calendar</h2>
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={setSelectedDate}
+          className="rounded-xl border p-4 sm:p-6 w-full"
+          classNames={{
+            table: "w-full table-fixed",
+            head_cell: "text-sm font-semibold text-center",
+            day: "h-10 w-10 sm:h-21 sm:w-21 m-2 md:h-full md:w-full flex items-center justify-center rounded-md text-sm hover:bg-muted/50 transition",
+          }}
+          modifiers={{
+            hasAdventure: (date) => markedDates.has(format(date, "yyyy-MM-dd")),
+          }}
+          modifiersClassNames={{
+            hasAdventure: "bg-green-300 text-black font-bold ring-2 ring-green-600"
+          }}
+        />
 
-            {eventsForDate.length > 0 ? (
-              eventsForDate.map((event, index) => (
-                <div
-                  key={index}
-                  className="flex justify-between items-center border rounded-md p-3 mb-2"
-                >
-                  <span className="text-sm">{event.title}</span>
-                  <Badge variant={event.status === "completed" ? "default" : "secondary"}>
-                    {event.status}
-                  </Badge>
-                </div>
-              ))
+        {selectedDate && (
+          <div className="mt-4 space-y-2">
+            <h3 className="text-lg font-medium">
+              Adventures on {format(selectedDate, "PPP")}:
+            </h3>
+            {filteredAdventures.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No adventures found.</p>
             ) : (
-              <p className="text-muted-foreground text-sm">
-                No trips for this date.
-              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filteredAdventures.map((adv) => (
+                  <motion.div
+                    key={adv.id}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.05 }}
+                    onClick={() => router.push(`/adventures/${adv.id}`)}
+                    className="cursor-pointer rounded-xl border shadow-sm overflow-hidden hover:shadow-md transition-all"
+                  >
+                    <Image
+                      src={adv.imageUrls[0] || "/adventure_place.webp"}
+                      alt={adv.name}
+                      width={500}
+                      height={300}
+                      className="w-full h-40 object-cover"
+                    />
+                    <div className="p-3">
+                      <h4 className="text-base font-medium">{adv.name}</h4>
+                      <p className="text-sm text-muted-foreground">{adv.location}</p>
+                    </div>
+                  </motion.div>
+                ))}
+
+              </div>
             )}
-          </DialogContent>
-        </Dialog>
-      </main>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
