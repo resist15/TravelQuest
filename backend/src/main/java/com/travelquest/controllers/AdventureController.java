@@ -2,7 +2,6 @@ package com.travelquest.controllers;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -71,46 +70,39 @@ public class AdventureController {
         return ResponseEntity.ok(list);
     }
     
+// old method for my
 //    @GetMapping("/my")
-//    public ResponseEntity<List<AdventureDTO>> getAdventuresByUserPaginated(
+//    public ResponseEntity<List<AdventureDTO>> getMyAdventures(
 //            @RequestParam(defaultValue = "0") int page,
 //            @RequestParam(defaultValue = "6") int size,
-//            @RequestParam String name,
+//            @RequestParam(required = false) String name,
 //            Authentication auth) {
-//        List<AdventureDTO> paginatedAdventures = adventureService.getAdventuresByUserPaginated(auth.getName(), page, size);
-//        return ResponseEntity.ok(paginatedAdventures);
+//        List<AdventureDTO> adventures = adventureService.getAdventuresByUserPaginated(
+//            auth.getName(), page, size, name
+//        );
+//        return ResponseEntity.ok(adventures);
 //    }
-    @GetMapping("/my")
-    public ResponseEntity<List<AdventureDTO>> getMyAdventures(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "6") int size,
-            @RequestParam(required = false) String name,
-            Authentication auth) {
-        List<AdventureDTO> adventures = adventureService.getAdventuresByUserPaginated(
-            auth.getName(), page, size, name
-        );
-        return ResponseEntity.ok(adventures);
-    }
-    
+//    
     @GetMapping("/{id}")
     public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id,Authentication auth) throws ResourceNotFoundException {
         return ResponseEntity.ok(adventureService.getAdventureByIdAndEmail(id,auth.getName()));
     }
     
-    //
     @GetMapping("/recent")
     public ResponseEntity<List<AdventureDTO>> getRecentAdventures() {
         return ResponseEntity.ok(adventureService.getRecentAdventures());
     }
 
-    @GetMapping("/sortedBy")
+    @GetMapping("/my")
     public ResponseEntity<List<AdventureDTO>> getAdventuresSorted(
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
+            @RequestParam(required = false) String searchTerm,
             Authentication auth
     ) {
-        List<AdventureDTO> sorted = adventureService.getAdventuresSorted(auth.getName(), sortBy, order);
+        List<AdventureDTO> sorted = adventureService.getAdventuresSorted(auth.getName(), sortBy, order, page, size, searchTerm);
         return ResponseEntity.ok(sorted);
     }
-    //
 }
