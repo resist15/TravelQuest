@@ -24,6 +24,7 @@ export default function CreateCollectionDialog() {
   const [selectedAdventures, setSelectedAdventures] = useState<number[]>([]);
   const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -51,6 +52,9 @@ export default function CreateCollectionDialog() {
   };
 
   const handleCreate = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const payload = {
       ...formData,
       startDate: formData.startDate?.toISOString(),
@@ -68,8 +72,8 @@ export default function CreateCollectionDialog() {
       await axios.post("/api/collections", form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toast.success("Collection created!");
 
+      toast.success("Collection created!");
       // Reset form
       setFormData({
         name: "",
@@ -86,9 +90,11 @@ export default function CreateCollectionDialog() {
     } catch (err) {
       console.error("Failed to create collection", err);
       toast.error("Failed to create collection");
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
+  
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -221,12 +227,12 @@ export default function CreateCollectionDialog() {
                 >
                   ← Back
                 </Button>
-                <Button
+                <Button 
                   onClick={handleCreate}
-                  disabled={!formData.name.trim()}
+                  disabled={!formData.name.trim() || isSubmitting}
                   className="w-1/2"
                 >
-                  Create
+                  {isSubmitting ? "Creating..." : "Create"}
                 </Button>
               </div>
             </div>
