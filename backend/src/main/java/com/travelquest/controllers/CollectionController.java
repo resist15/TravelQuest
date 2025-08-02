@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.travelquest.dto.AdventureDTO;
 import com.travelquest.dto.CollectionDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
+import com.travelquest.services.AdventureService;
 import com.travelquest.services.CollectionService;
 
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class CollectionController {
 
     private final CollectionService collectionService;
-
+    private final AdventureService adventureService;
 //    
 //    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 //    public ResponseEntity<AdventureDTO> createAdventure(
@@ -74,6 +75,11 @@ public class CollectionController {
     @GetMapping("/{id}")
     public ResponseEntity<CollectionDTO> getCollectionById(@PathVariable Long id, Authentication auth) throws AccessDeniedException {
         return ResponseEntity.ok(collectionService.getCollectionById(id, auth.getName()));
+    }
+    
+    @GetMapping("/{id}/adventures")
+    public ResponseEntity<List<AdventureDTO>> getAdventuresByCollection(@PathVariable Long id, Authentication auth) throws AccessDeniedException {
+        return ResponseEntity.ok(adventureService.getAdventuresByCollectionId(id));
     }
     
     @PostMapping("/{collectionId}/adventures/{adventureId}")
