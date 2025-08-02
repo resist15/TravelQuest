@@ -188,6 +188,11 @@ public class AdventureServiceImpl implements AdventureService {
     }
     
     @Override
+    public List<AdventureDTO> getAdventuresByCollectionId(Long id){
+    	return adventureRepository.findAllByCollectionId(id).stream().map(this::toDTO).collect(Collectors.toList());
+    }
+    
+    @Override
     public AdventureDTO getAdventureByIdAndEmail(Long id, String email) throws ResourceNotFoundException {
         Adventure adventure = adventureRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));

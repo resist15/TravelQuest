@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.travelquest.dto.AdventureDTO;
 import com.travelquest.dto.CollectionDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.Collection;
@@ -32,6 +33,7 @@ public class CollectionServiceImpl implements CollectionService {
     private final UserRepository userRepository;
     private final AdventureRepository adventureRepository;
     private final CloudinaryService cloudinaryService;
+    private final AdventureService adventureService;
 
     @Override
     @Transactional
@@ -139,7 +141,7 @@ public class CollectionServiceImpl implements CollectionService {
 
         return toDTO(collection);
     }
-
+    
     @Override
     public List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size) {
         User user = userRepository.findByEmail(email)
