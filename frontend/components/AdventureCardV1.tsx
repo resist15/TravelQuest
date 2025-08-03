@@ -16,6 +16,37 @@ type AdventureCardProps = {
 };
 
 export default function AdventureCard({ adventure }: AdventureCardProps) {
+  const [locationName, setLocationName] = useState<string>("");
+
+  const fetchLocationName = useCallback(async (lat: number, lon: number) => {
+    try {
+      const res = await fetch(
+        `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=hCWgkMCmHCAFZw9YCnLa`
+      );
+      const data = await res.json();
+
+      const regionFeature = data.features.find((feature: any) =>
+        feature.place_type.includes("region")
+      );
+
+      const subregionFeature = data.features.find((feature: any) =>
+        feature.place_type.includes("subregion")
+      );
+
+      const place = regionFeature?.place_name || subregionFeature?.place_name || "Unknown location";
+      setLocationName(place);
+    } catch (err) {
+      console.error("Failed to reverse geocode:", err);
+      setLocationName("Unknown location");
+    }
+  }, []);
+
+
+  useEffect(() => {
+    if (adventure.latitude && adventure.longitude) {
+      fetchLocationName(adventure.latitude, adventure.longitude);
+    }
+  }, [adventure.latitude, adventure.longitude, fetchLocationName]);
 
   const coverImageUrl =
     adventure.imageUrls && adventure.imageUrls.length > 0
@@ -49,7 +80,7 @@ export default function AdventureCard({ adventure }: AdventureCardProps) {
           ))}
         </div>
         {/* Display the fetched location name */}
-        <p className="text-muted-foreground text-sm">📍 {adventure.location}</p>
+        <p className="text-muted-foreground text-sm">📍 {locationName}</p>
       </div>
     </div>
   );
