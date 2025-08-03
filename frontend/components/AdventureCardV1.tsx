@@ -21,7 +21,7 @@ export default function AdventureCard({ adventure }: AdventureCardProps) {
   const fetchLocationName = useCallback(async (lat: number, lon: number) => {
     try {
       const res = await fetch(
-        `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=hCWgkMCmHCAFZw9YCnLa`
+        `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
       );
       const data = await res.json();
 
