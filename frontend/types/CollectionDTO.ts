@@ -3,8 +3,7 @@ export interface CollectionDTO {
   name: string;
   description: string;
   coverImage: string;
-  startDate: string;
-  endDate: string;
+  durationInDays: number;
   adventureCount: number;
   existingAdventureIds: number[]
 }

@@ -19,6 +19,20 @@ export default function CollectionsPage() {
     const [collections, setCollections] = useState<CollectionDTO[]>([]);
     const router = useRouter();
 
+    function formatDuration(days: number): string {
+        if (days < 7) {
+            return `${days} day${days > 1 ? "s" : ""}`
+        } else if (days % 7 === 0 && days < 30) {
+            const weeks = days / 7
+            return `${weeks} week${weeks > 1 ? "s" : ""}`
+        } else if (days % 30 === 0) {
+            const months = days / 30
+            return `${months} month${months > 1 ? "s" : ""}`
+        } else {
+            return `${days} days`
+        }
+    }
+
     useEffect(() => {
         const fetchCollections = async () => {
             try {
@@ -71,8 +85,7 @@ export default function CollectionsPage() {
                                 <div className="flex items-center gap-2 text-xs">
                                     <CalendarDays className="h-4 w-4" />
                                     <span>
-                                      {format(parseISO(collection.startDate), "d MMM")} –{" "}
-                                      {format(parseISO(collection.endDate), "d MMM, yyyy")}
+                                          Duration: {formatDuration(collection.durationInDays)}
                                     </span>
                                 </div>
                             </div>
