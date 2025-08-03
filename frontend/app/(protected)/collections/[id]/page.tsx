@@ -57,6 +57,7 @@ export default function CollectionDetailsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+       
       {/* Collection Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
         <div className="w-32 h-32 relative rounded-lg overflow-hidden border shadow">

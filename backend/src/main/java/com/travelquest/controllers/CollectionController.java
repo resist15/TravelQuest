@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -93,13 +94,15 @@ public class CollectionController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<CollectionDTO>> getMyCollectionsPaginated(
+    public ResponseEntity<Page<CollectionDTO>> getMyCollectionsPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int size,
+            @RequestParam(required = false) String searchTerm,
             Authentication auth
     ) {
-        List<CollectionDTO> collections = collectionService.getCollectionsByUserPaginated(auth.getName(), page, size);
+        Page<CollectionDTO> collections = collectionService.getCollectionsByUserPaginated(auth.getName(), page, size, searchTerm);
         return ResponseEntity.ok(collections);
     }
+
 
 }
