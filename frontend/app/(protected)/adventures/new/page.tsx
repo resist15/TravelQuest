@@ -30,7 +30,7 @@ export default function NewAdventurePage() {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: "https://api.maptiler.com/maps/streets/style.json?key=hCWgkMCmHCAFZw9YCnLa",
+      style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
       center: [78.9629, 20.5937],
       zoom: 4,
     });

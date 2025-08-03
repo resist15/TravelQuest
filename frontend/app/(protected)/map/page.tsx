@@ -51,7 +51,7 @@ export default function MapPage() {
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://api.maptiler.com/maps/streets/style.json?key=hCWgkMCmHCAFZw9YCnLa",
+      style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
       center: [0, 20],
       zoom: 2,
     });
@@ -108,7 +108,7 @@ export default function MapPage() {
 
         try {
           const res = await fetch(
-            `https://api.maptiler.com/geocoding/${adv.longitude},${adv.latitude}.json?key=hCWgkMCmHCAFZw9YCnLa`
+            `https://api.maptiler.com/geocoding/${adv.longitude},${adv.latitude}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
           );
           const data = await res.json();
           const countryFeature = data.features?.find((feature: any) =>
