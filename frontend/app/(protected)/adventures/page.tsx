@@ -107,7 +107,7 @@ export default function AdventuresPage() {
 
         {/* Desktop title and search bar */}
         <motion.div
-          className="hidden lg:flex items-center justify-between mb-6"
+          className="hidden lg:flex items-center justify-between mb-3"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
