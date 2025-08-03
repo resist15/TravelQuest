@@ -1,18 +1,11 @@
 "use client";
 
+import { AdventureDTO } from "@/types/AdventureDTO";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-type Adventure = {
-  name: string;
-  imageUrls: string[];
-  tags: string[];
-  location: string;
-  latitude: number;
-  longitude: number;
-};
 
 type AdventureCardProps = {
-  adventure: Adventure;
+  adventure: AdventureDTO;
 };
 
 export default function AdventureCard({ adventure }: AdventureCardProps) {
@@ -48,6 +41,13 @@ export default function AdventureCard({ adventure }: AdventureCardProps) {
             </span>
           ))}
         </div>
+        {typeof adventure.rating === "number" && (
+          <div className="flex items-center gap-1 text-yellow-500 text-sm">
+            {"★".repeat(Math.floor(adventure.rating))}
+            {"☆".repeat(5 - Math.floor(adventure.rating))}
+            <span className="text-muted-foreground ml-1">({adventure.rating.toFixed(1)})</span>
+          </div>
+        )}
         {/* Display the fetched location name */}
         <p className="text-muted-foreground text-sm">📍 {adventure.location}</p>
       </div>

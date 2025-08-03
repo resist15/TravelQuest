@@ -13,4 +13,6 @@ import com.travelquest.entity.User;
 
 public interface CollectionRepository extends JpaRepository<Collection, Long> {
     Page<Collection> findByUser(User user, Pageable pageable);
+    Page<Collection> findByUserAndNameContainingIgnoreCase(User user, String name, Pageable pageable);
+
 }
