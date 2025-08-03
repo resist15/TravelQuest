@@ -19,19 +19,19 @@ export default function CollectionsPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchCollections = async () => {
-            setLoading(true);
-            try {
-                const res = await axios.get("/api/collections")
-                setCollections(res.data);
-            } catch (err) {
-                console.error("Failed to fetch collections");
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchCollections = async () => {
+        setLoading(true);
+        try {
+            const res = await axios.get("/api/collections")
+            setCollections(res.data);
+        } catch (err) {
+            console.error("Failed to fetch collections");
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchCollections();
     }, []);
 
@@ -115,7 +115,7 @@ export default function CollectionsPage() {
                 </motion.div>
             </AnimatePresence>
             <div className="mt-10 text-center">
-                <CreateCollectionDialog />
+                <CreateCollectionDialog onSuccess={() => fetchCollections()} />
             </div>
         </div>
     );
