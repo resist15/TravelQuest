@@ -18,28 +18,34 @@ import { AdventureDTO } from "@/types/AdventureDTO";
 import { toast } from "react-toastify";
 import TripDurationSelector from "./TripDurationSelector";
 
-export default function CreateCollectionDialog() {
+type Props = {
+  onSuccess?: () => void;
+};
+
+export default function CreateCollectionDialog({ onSuccess }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedAdventures, setSelectedAdventures] = useState<number[]>([]);
   const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [durationDays, setDurationInDays] = useState(1)
+  const [durationDays, setDurationInDays] = useState(1);
+  const [open, setOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
   });
 
+  const fetchAdventures = async () => {
+    try {
+      const res = await axios.get("/api/adventures?unassignedOnly=true");
+      setAdventures(res.data);
+    } catch (err) {
+      console.error("Failed to fetch adventures", err);
+    }
+  };
+
   useEffect(() => {
-    const fetchAdventures = async () => {
-      try {
-        const res = await axios.get("/api/adventures?unassignedOnly=true");
-        setAdventures(res.data);
-      } catch (err) {
-        console.error("Failed to fetch adventures", err);
-      }
-    };
     fetchAdventures();
   }, []);
 
@@ -60,7 +66,10 @@ export default function CreateCollectionDialog() {
     };
 
     const form = new FormData();
-    form.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+    form.append(
+      "data",
+      new Blob([JSON.stringify(payload)], { type: "application/json" })
+    );
     if (imageFile) {
       form.append("image", imageFile);
     }
@@ -71,17 +80,16 @@ export default function CreateCollectionDialog() {
       });
 
       toast.success("Collection created!");
-      // Reset form
-      setFormData({
-        name: "",
-        description: "",
-      });
+
+      if (onSuccess) onSuccess();
+      setOpen(false);
+
+      setFormData({ name: "", description: "" });
       setSelectedAdventures([]);
       setStep(1);
       setImageFile(null);
 
-      const res = await axios.get("/api/adventures?unassignedOnly=true");
-      setAdventures(res.data);
+      await fetchAdventures();
     } catch (err) {
       console.error("Failed to create collection", err);
       toast.error("Failed to create collection");
@@ -89,11 +97,11 @@ export default function CreateCollectionDialog() {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>+ Add New Collection</Button>
+        <Button onClick={() => setOpen(true)}>+ Add New Collection</Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-md">
@@ -119,11 +127,11 @@ export default function CreateCollectionDialog() {
                 </div>
               ))}
             </div>
-              <Button
-                className="mt-4 w-full"
-                disabled={selectedAdventures.length === 0}
-                onClick={() => setStep(2)}
-              >
+            <Button
+              className="mt-4 w-full"
+              disabled={selectedAdventures.length === 0}
+              onClick={() => setStep(2)}
+            >
               Continue
             </Button>
           </>
@@ -156,11 +164,14 @@ export default function CreateCollectionDialog() {
                 }
               />
               <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Add a Cover Image (optional)</label>
-
+                <label className="text-sm font-medium text-foreground">
+                  Add a Cover Image (optional)
+                </label>
                 <div
                   className="border border-dashed border-muted rounded-xl p-4 flex flex-col items-center justify-center text-muted-foreground hover:border-primary transition-colors cursor-pointer"
-                  onClick={() => document.getElementById("collection-image")?.click()}
+                  onClick={() =>
+                    document.getElementById("collection-image")?.click()
+                  }
                 >
                   {imageFile ? (
                     <div className="relative w-full max-w-xs">
@@ -175,8 +186,12 @@ export default function CreateCollectionDialog() {
                     </div>
                   ) : (
                     <>
-                      <span className="text-sm">Click to upload a cover image</span>
-                      <span className="text-xs text-muted-foreground mt-1">(JPG, PNG, Max ~2MB)</span>
+                      <span className="text-sm">
+                        Click to upload a cover image
+                      </span>
+                      <span className="text-xs text-muted-foreground mt-1">
+                        (JPG, PNG, Max ~2MB)
+                      </span>
                     </>
                   )}
                 </div>
@@ -194,8 +209,8 @@ export default function CreateCollectionDialog() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <TripDurationSelector onDurationChange={setDurationInDays} />
-
               </div>
+
               <div className="flex gap-2 justify-between">
                 <Button
                   variant="outline"
@@ -204,7 +219,7 @@ export default function CreateCollectionDialog() {
                 >
                   ← Back
                 </Button>
-                <Button 
+                <Button
                   onClick={handleCreate}
                   disabled={!formData.name.trim() || isSubmitting}
                   className="w-1/2"
