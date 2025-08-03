@@ -29,8 +29,6 @@ export default function CreateCollectionDialog() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    startDate: undefined as Date | undefined,
-    endDate: undefined as Date | undefined,
   });
 
   useEffect(() => {
@@ -77,8 +75,6 @@ export default function CreateCollectionDialog() {
       setFormData({
         name: "",
         description: "",
-        startDate: undefined,
-        endDate: undefined,
       });
       setSelectedAdventures([]);
       setStep(1);
@@ -221,5 +217,5 @@ export default function CreateCollectionDialog() {
         )}
       </DialogContent>
     </Dialog>
-  );  
+  );
 }

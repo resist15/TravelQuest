@@ -17,6 +17,7 @@ import { CollectionDTO } from "@/types/CollectionDTO"
 import { Button } from "@/components/ui/button"
 import AddAdventureDialog from "@/components/AddAdventureDialog"
 import EditCollectionDialog from "@/components/EditCollectionDialog"
+import { toast } from "react-toastify"
 
 export default function CollectionDetailsPage() {
   const { id } = useParams()
@@ -41,6 +42,7 @@ export default function CollectionDetailsPage() {
       }
     } catch (err) {
       console.error("Failed to load collection", err)
+      toast.error("Failed to load collection")
     } finally {
       setLoading(false);
     }
@@ -76,10 +78,13 @@ export default function CollectionDetailsPage() {
             </span>
           </div>
         </div>
-        <Badge variant="secondary" className="text-xl ml-auto">
-          {collection.adventureCount} trips
-        </Badge>
-        <EditCollectionDialog collection={collection} onUpdated={fetchCollection} />
+        <div className="flex flex-col items-end ml-auto gap-2">
+          <Badge variant="secondary" className="text-xl mb-3">
+            {collection.adventureCount} trips
+          </Badge>
+          <EditCollectionDialog collection={collection} onUpdated={fetchCollection} />
+        </div>
+
 
       </div>
       <div className="flex justify-between items-center mb-6">
