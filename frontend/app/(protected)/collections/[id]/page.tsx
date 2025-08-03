@@ -2,7 +2,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import axios from "@/lib/axios"
 import { AdventureDTO } from "@/types/AdventureDTO"
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import AddAdventureDialog from "@/components/AddAdventureDialog"
 import EditCollectionDialog from "@/components/EditCollectionDialog"
 import { toast } from "react-toastify"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 export default function CollectionDetailsPage() {
   const { id } = useParams()
@@ -26,6 +27,7 @@ export default function CollectionDetailsPage() {
   const [loading, setLoading] = useState(true);
   const PAGE_SIZE = 6;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const router = useRouter();
 
   const fetchCollection = async () => {
     setLoading(true);
@@ -78,12 +80,50 @@ export default function CollectionDetailsPage() {
             </span>
           </div>
         </div>
-        <div className="flex flex-col items-end ml-auto gap-2">
-          <Badge variant="secondary" className="text-xl mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center items-end ml-auto gap-2">
+          <Badge variant="secondary" className="text-xl sm:mr-2">
             {collection.adventureCount} trips
           </Badge>
-          <EditCollectionDialog collection={collection} onUpdated={fetchCollection} />
+
+          <div className="flex gap-2">
+            <EditCollectionDialog collection={collection} onUpdated={fetchCollection} />
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this collection?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. All links to this collection will stop working.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      try {
+                        await axios.delete(`/api/collections/${collection.id}`);
+                        toast.success("Collection deleted");
+                        router.push("/collections");
+                      } catch (err) {
+                        console.error("Failed to delete collection", err);
+                        toast.error("Failed to delete collection");
+                      }
+                    }}
+                  >
+                    Yes, delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
+
 
 
       </div>
