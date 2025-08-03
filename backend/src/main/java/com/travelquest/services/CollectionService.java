@@ -12,7 +12,7 @@ import com.travelquest.exceptions.ResourceNotFoundException;
 public interface CollectionService {
 	
     CollectionDTO createCollection(String email, CollectionDTO dto,MultipartFile image) throws ResourceNotFoundException, IOException;
-    CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws AccessDeniedException;
+    CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws AccessDeniedException,IOException;
     List<CollectionDTO> getCollectionsByUser(String email);
     List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size);
     CollectionDTO getCollectionById(Long id, String email) throws AccessDeniedException;
