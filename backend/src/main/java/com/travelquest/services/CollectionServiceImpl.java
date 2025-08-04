@@ -153,7 +153,7 @@ public class CollectionServiceImpl implements CollectionService {
     }
     
     @Override
-    public Page<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size, String name) {
+    public List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size, String name) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -166,7 +166,7 @@ public class CollectionServiceImpl implements CollectionService {
             pageResult = collectionRepository.findByUser(user, pageable);
         }
 
-        return pageResult.map(this::toDTO);
+        return pageResult.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
 
