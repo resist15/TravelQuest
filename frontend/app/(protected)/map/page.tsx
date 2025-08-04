@@ -14,28 +14,20 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Plane, Globe2, Star } from "lucide-react"; // Import Star icon
-
-interface Adventure {
-  id: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-  location: string;
-  rating: number;
-}
+import { AdventureDTO } from "@/types/AdventureDTO";
 
 export default function MapPage() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const markerInstancesRef = useRef<Marker[]>([]);
-  const [adventures, setAdventures] = useState<Adventure[]>([]);
+  const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
   const [visitedCountries, setVisitedCountries] = useState<string[]>([]);
   const [averageRating, setAverageRating] = useState<number>(0);
 
   useEffect(() => {
     const fetchAdventures = async () => {
       try {
-        const res = await axios.get<Adventure[]>("/api/adventures");
+        const res = await axios.get<AdventureDTO[]>("/api/adventures");
         setAdventures(res.data);
       } catch (err) {
         console.error("Failed to fetch adventures:", err);

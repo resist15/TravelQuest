@@ -24,10 +24,13 @@ import Link from "next/link";
 import AdventureCard from "@/components/AdventureCard";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { DashboardStatsDTO } from "@/types/DashboardStatsDTO";
+import { toast } from "react-toastify";
 export default function Home() {
   const router = useRouter();
   const [userName, setUserName] = useState<string>('User');
   const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
+  const [stats, setStats] = useState<DashboardStatsDTO | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function Home() {
       try {
         setLoading(true);
         JSON.parse(atob(token.split('.')[1]));
-        const [userRes, advRes] = await Promise.all([
+        const [userRes, advRes, statsRes] = await Promise.all([
           api.get('/api/users/me'),
           api.get("/api/adventures/my", {
             params: {
@@ -50,13 +53,16 @@ export default function Home() {
               page: 0,
               size: 3,
             }
-          })
+          }),
+          api.get('/api/adventures/dashboard')
         ]);
         setAdventures(advRes.data || []);
         setUserName(userRes.data.name || 'User');
+        setStats(statsRes.data);
       } catch (err: any) {
         console.error(err);
         if (err.response?.status === 401) router.push('/login');
+        toast.error("Failed to fetch dashboard data")
       } finally {
         setLoading(false);
       }
@@ -74,25 +80,25 @@ export default function Home() {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-muted rounded-xl p-4 flex flex-col justify-center">
-            <p className="text-3xl font-bold text-pink-500">14</p>
+            <p className="text-3xl font-bold text-pink-500">{stats?.totalAdventures}</p>
             <div className="flex items-center gap-2 text-base mt-1">
               <Plane className="w-4 h-4 text-pink-500" /> Total Adventures
             </div>
           </div>
           <div className="bg-muted rounded-xl p-4 flex flex-col justify-center">
-            <p className="text-3xl font-bold text-blue-500">3</p>
+            <p className="text-3xl font-bold text-blue-500">{stats?.totalCountries}</p>
             <div className="flex items-center gap-2 text-base mt-1">
               <Flag className="w-4 h-4 text-blue-500" /> Countries Visited
             </div>
           </div>
           <div className="bg-muted rounded-xl p-4 flex flex-col justify-center">
-            <p className="text-3xl font-bold text-green-500">4</p>
+            <p className="text-3xl font-bold text-green-500">{stats?.totalRegions}</p>
             <div className="flex items-center gap-2 text-base mt-1">
               <MapPin className="w-4 h-4 text-green-500" /> Total Visited Regions
             </div>
           </div>
           <div className="bg-muted rounded-xl p-4 flex flex-col justify-center">
-            <p className="text-3xl font-bold text-cyan-500">2</p>
+            <p className="text-3xl font-bold text-cyan-500">{stats?.totalCities}</p>
             <div className="flex items-center gap-2 text-base mt-1">
               <Building2 className="w-4 h-4 text-cyan-500" /> Total Visited Cities
             </div>
