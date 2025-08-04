@@ -1,15 +1,18 @@
 package com.travelquest.services;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.CollectionDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
 
 public interface CollectionService {
 	
-    CollectionDTO createCollection(String email, CollectionDTO dto) throws ResourceNotFoundException;
-    CollectionDTO updateCollection(Long id, CollectionDTO dto);
+    CollectionDTO createCollection(String email, CollectionDTO dto,MultipartFile image) throws ResourceNotFoundException, IOException;
+    CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws AccessDeniedException;
     List<CollectionDTO> getCollectionsByUser(String email);
     List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size);
     CollectionDTO getCollectionById(Long id, String email) throws AccessDeniedException;

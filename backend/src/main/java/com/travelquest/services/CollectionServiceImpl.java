@@ -1,5 +1,6 @@
 package com.travelquest.services;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.CollectionDTO;
 import com.travelquest.entity.Adventure;
@@ -29,10 +31,11 @@ public class CollectionServiceImpl implements CollectionService {
     private final CollectionRepository collectionRepository;
     private final UserRepository userRepository;
     private final AdventureRepository adventureRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     @Transactional
-    public CollectionDTO createCollection(String email, CollectionDTO dto) throws ResourceNotFoundException {
+    public CollectionDTO createCollection(String email, CollectionDTO dto,MultipartFile image) throws ResourceNotFoundException, IOException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -45,11 +48,16 @@ public class CollectionServiceImpl implements CollectionService {
                 throw new ResourceNotFoundException("Adventure already belongs to a collection: " + adventureId);
             }
         }
-
+        String url = "/adventure_place.webp";
+        
+        if(image != null) {
+        	url = cloudinaryService.uploadImage(image, user.getId().toString(), user.getId().toString());
+        }
+        
         Collection collection = Collection.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
-                .coverImage(dto.getCoverImage())
+                .coverImage(url)
                 .startDate(dto.getStartDate())
                 .endDate(dto.getEndDate())
                 .user(user)
@@ -64,10 +72,17 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Transactional
-    public CollectionDTO updateCollection(Long id, CollectionDTO dto) {
+    public CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws AccessDeniedException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
         Collection collection = collectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Collection not found"));
 
+        if (!collection.getUser().getEmail().equals(email)) {
+            throw new AccessDeniedException("Unauthorized");
+        }
+        
         collection.setName(dto.getName());
         collection.setDescription(dto.getDescription());
         collection.setCoverImage(dto.getCoverImage());

@@ -1,12 +1,16 @@
 package com.travelquest.controllers;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.travelquest.dto.AdventureDTO;
 import com.travelquest.dto.CollectionDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.services.CollectionService;
@@ -20,19 +24,29 @@ public class CollectionController {
 
     private final CollectionService collectionService;
 
-    @PostMapping
+//    
+//    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<AdventureDTO> createAdventure(
+//            @RequestPart("data") AdventureDTO dto,
+//            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+//            Authentication auth) {
+    
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CollectionDTO> createCollection(
-            @RequestBody CollectionDTO dto,
-            Authentication auth) throws ResourceNotFoundException {
-        CollectionDTO created = collectionService.createCollection(auth.getName(), dto);
+    		@RequestPart("data") CollectionDTO dto,
+    		@RequestPart(value = "image", required = false) MultipartFile image,
+            Authentication auth) throws ResourceNotFoundException, IOException {
+        CollectionDTO created = collectionService.createCollection(auth.getName(), dto, image);
         return ResponseEntity.ok(created);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CollectionDTO> updateCollection(
             @PathVariable Long id,
-            @RequestBody CollectionDTO dto) {
-        return ResponseEntity.ok(collectionService.updateCollection(id, dto));
+    		@RequestPart("data") CollectionDTO dto,
+    		@RequestPart(value = "image", required = false) MultipartFile image,
+    		Authentication auth) throws AccessDeniedException {
+        return ResponseEntity.ok(collectionService.updateCollection(id, dto, image, auth.getName()));
     }
 
     @DeleteMapping("/{id}")

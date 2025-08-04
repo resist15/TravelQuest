@@ -23,6 +23,7 @@ export default function CreateCollectionDialog() {
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedAdventures, setSelectedAdventures] = useState<number[]>([]);
   const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -56,26 +57,35 @@ export default function CreateCollectionDialog() {
       endDate: formData.endDate?.toISOString(),
       existingAdventureIds: selectedAdventures,
     };
-    console.log(payload)
+
+    const form = new FormData();
+    form.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+    if (imageFile) {
+      form.append("image", imageFile);
+    }
+
     try {
-      await axios.post("/api/collections", payload);
+      await axios.post("/api/collections", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       toast.success("Collection created!");
 
+      // Reset form
       setFormData({
         name: "",
         description: "",
         startDate: undefined,
         endDate: undefined,
       });
-
       setSelectedAdventures([]);
       setStep(1);
+      setImageFile(null);
 
       const res = await axios.get("/api/adventures?unassignedOnly=true");
       setAdventures(res.data);
     } catch (err) {
       console.error("Failed to create collection", err);
-      toast.error("Collection created!");
+      toast.error("Failed to create collection");
     }
   };
 
@@ -144,6 +154,43 @@ export default function CreateCollectionDialog() {
                   }))
                 }
               />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Add a Cover Image (optional)</label>
+
+                <div
+                  className="border border-dashed border-muted rounded-xl p-4 flex flex-col items-center justify-center text-muted-foreground hover:border-primary transition-colors cursor-pointer"
+                  onClick={() => document.getElementById("collection-image")?.click()}
+                >
+                  {imageFile ? (
+                    <div className="relative w-full max-w-xs">
+                      <img
+                        src={URL.createObjectURL(imageFile)}
+                        alt="Preview"
+                        className="rounded-md object-cover max-h-48 w-full"
+                      />
+                      <span className="absolute top-1 right-1 text-xs bg-background px-2 py-0.5 rounded shadow text-foreground">
+                        Change
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-sm">Click to upload a cover image</span>
+                      <span className="text-xs text-muted-foreground mt-1">(JPG, PNG, Max ~2MB)</span>
+                    </>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  id="collection-image"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setImageFile(file);
+                  }}
+                  className="hidden"
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <DatePicker
                   date={formData.startDate}
