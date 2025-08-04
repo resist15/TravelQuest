@@ -46,7 +46,7 @@ public class CollectionController {
             @PathVariable Long id,
     		@RequestPart("data") CollectionDTO dto,
     		@RequestPart(value = "image", required = false) MultipartFile image,
-    		Authentication auth) throws AccessDeniedException {
+    		Authentication auth) throws IOException {
         return ResponseEntity.ok(collectionService.updateCollection(id, dto, image, auth.getName()));
     }
 
