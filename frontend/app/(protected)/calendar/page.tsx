@@ -1,13 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { AdventureDTO } from "@/types/AdventureDTO";
-import axios from "@/lib/axios"; // your axios instance
+import axios from "@/lib/axios";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function CalendarPage() {
@@ -15,19 +14,57 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [filteredAdventures, setFilteredAdventures] = useState<AdventureDTO[]>([]);
   const router = useRouter();
+  const [recentLocations, setRecentLocations] = useState<Record<string, string>>({});
+  const [filteredLocations, setFilteredLocations] = useState<Record<string, string>>({});
+
+  const fetchLocationsForAdventures = useCallback(async (advs: AdventureDTO[], setLocationMap: React.Dispatch<React.SetStateAction<Record<string, string>>>) => {
+    const results: Record<string, string> = {};
+
+    await Promise.all(
+      advs.map(async (adv) => {
+        try {
+          const res = await fetch(
+            `https://api.maptiler.com/geocoding/${adv.longitude},${adv.latitude}.json?key=hCWgkMCmHCAFZw9YCnLa`
+          );
+          const data = await res.json();
+
+          const regionFeature = data.features.find((f: any) =>
+            f.place_type.includes("region")
+          );
+          const subregionFeature = data.features.find((f: any) =>
+            f.place_type.includes("subregion")
+          );
+
+          results[adv.id] = regionFeature?.place_name || subregionFeature?.place_name || "Unknown";
+        } catch (err) {
+          console.error("Failed to reverse geocode for adventure", adv.id, err);
+          results[adv.id] = "Unknown";
+        }
+      })
+    );
+
+    setLocationMap(results);
+  }, []);
 
   useEffect(() => {
     const fetchAdventures = async () => {
       try {
         const res = await axios.get<AdventureDTO[]>("/api/adventures");
         setAdventures(res.data);
+
+        const recent = res.data
+          .slice()
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 3);
+
+        fetchLocationsForAdventures(recent, setRecentLocations);
       } catch (err) {
         console.error("Failed to fetch adventures", err);
       }
     };
 
     fetchAdventures();
-  }, []);
+  }, [fetchLocationsForAdventures]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -41,6 +78,15 @@ export default function CalendarPage() {
     );
     setFilteredAdventures(filtered);
   }, [selectedDate, adventures]);
+
+  useEffect(() => {
+    if (filteredAdventures.length > 0) {
+      fetchLocationsForAdventures(filteredAdventures, setFilteredLocations);
+    } else {
+      setFilteredLocations({});
+    }
+  }, [filteredAdventures, fetchLocationsForAdventures]);
+
 
   const recentAdventures = adventures
     .slice()
@@ -77,7 +123,7 @@ export default function CalendarPage() {
             />
             <div className="p-4">
               <h3 className="text-lg font-medium">{adv.name}</h3>
-              <p className="text-muted-foreground text-sm">{adv.location}</p>
+              <p className="text-muted-foreground text-sm">🌎 {recentLocations[adv.id] || adv.location}</p>
               <p className="text-xs text-gray-500 mt-1">{format(new Date(adv.createdAt), "PPP")}</p>
             </div>
           </motion.div>
@@ -134,7 +180,8 @@ export default function CalendarPage() {
                     />
                     <div className="p-3">
                       <h4 className="text-base font-medium">{adv.name}</h4>
-                      <p className="text-sm text-muted-foreground">{adv.location}</p>
+                      <p className="text-sm text-muted-foreground">  🌎 {filteredLocations[adv.id] || adv.location}
+</p>
                     </div>
                   </motion.div>
                 ))}
