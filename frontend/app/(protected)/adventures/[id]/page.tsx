@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
-  ChevronLeft,
-  ChevronRight,
   X,
   MapPin,
   Star,
@@ -13,8 +11,6 @@ import {
   UploadCloud,
   Trash2,
 } from "lucide-react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertDialog,
@@ -36,7 +32,6 @@ import { format } from "date-fns";
 import clsx from "clsx";
 import { AdventureDTO } from "@/types/AdventureDTO";
 import { toast } from "react-toastify";
-import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 
@@ -62,7 +57,6 @@ export default function AdventureDetails() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [tagsInput, setTagsInput] = useState<string>("");
   const [brokenImageUrls, setBrokenImageUrls] = useState<Set<string>>(new Set());
-  const viewerRef = useRef<HTMLDivElement>(null);
   const tagsInputRef = useRef<HTMLInputElement>(null);
 
   // New state for image deletion
@@ -249,14 +243,6 @@ export default function AdventureDetails() {
     ...validAdventureImageUrls,
     ...photosToUpload.map(file => URL.createObjectURL(file)),
   ];
-
-  const nextImage = () =>
-    setSelectedIndex(prev =>
-      prev !== null && prev < allImages.length - 1 ? prev + 1 : prev
-    );
-
-  const prevImage = () =>
-    setSelectedIndex(prev => (prev !== null && prev > 0 ? prev - 1 : prev));
 
   const handleMapClick = (coords: [number, number]) => {
     if (editing) {

@@ -28,6 +28,7 @@ export default function AddAdventureDialog({ collectionId, onAdded }: Props) {
   const fetchUnassigned = async () => {
     setLoading(true)
     try {
+      await new Promise((resolve) => setTimeout(resolve, 300))
       const res = await axios.get("/api/adventures?unassignedOnly=true")
       setAdventures(res.data)
     } catch (err) {
