@@ -56,11 +56,12 @@ public class AdventureController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/images/{imageId}")
+    @DeleteMapping("/image/{id}")
     public ResponseEntity<Void> deleteAdventureImage(
-            @PathVariable Long imageId,
+    		@PathVariable Long id,
+    		@RequestParam String imageUrl,
             Authentication auth) {
-        adventureService.deleteImage(imageId, auth.getName());
+        adventureService.deleteImage(id,imageUrl, auth.getName());
         return ResponseEntity.noContent().build();
     }
 

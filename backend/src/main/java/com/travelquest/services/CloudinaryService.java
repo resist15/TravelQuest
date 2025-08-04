@@ -36,13 +36,25 @@ public class CloudinaryService {
     public void deleteImage(String url) {
         try {
             String publicId = extractPublicId(url);
+            System.out.println("Extracted public ID: " + publicId);
+
             if (publicId != null) {
-                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                Map<String, Object> options = ObjectUtils.asMap(
+                    "invalidate", true,
+                    "resource_type", "image"
+                );
+
+                Map<?, ?> result = cloudinary.uploader().destroy(publicId, options);
+                System.out.println("Cloudinary delete result: " + result);
+            } else {
+                System.out.println("Failed to extract public ID");
             }
         } catch (Exception e) {
+            System.err.println("Error deleting image from Cloudinary:");
             e.printStackTrace();
         }
     }
+
 
     public void deleteImages(List<String> urls) {
         for (String url : urls) {
@@ -54,13 +66,25 @@ public class CloudinaryService {
         try {
             String path = new URL(url).getPath();
             String[] segments = path.split("/");
+
             int uploadIndex = Arrays.asList(segments).indexOf("upload");
-            if (uploadIndex != -1) {
-                String publicId = String.join("/", Arrays.copyOfRange(segments, uploadIndex + 1, segments.length));
-                return publicId.replaceAll("\\.[^.]+$", "");
+            if (uploadIndex == -1 || uploadIndex + 1 >= segments.length) return null;
+
+            List<String> publicIdSegments = new ArrayList<>();
+
+            for (int i = uploadIndex + 1; i < segments.length; i++) {
+                String segment = segments[i];
+                if (!segment.matches("^v\\d+$")) {
+                    publicIdSegments.add(segment);
+                }
             }
+
+            String publicId = String.join("/", publicIdSegments);
+            return publicId.replaceAll("\\.[^.]+$", "");
         } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        return null;
     }
+
 }
