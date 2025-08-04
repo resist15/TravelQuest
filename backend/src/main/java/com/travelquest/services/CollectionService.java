@@ -19,6 +19,6 @@ public interface CollectionService {
     void removeAdventureFromCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException ;
     void deleteCollection(Long collectionId, String email) throws AccessDeniedException;
     void addAdventureToCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException;
-    Page<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size, String name);
+    List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size, String name);
 
 }
