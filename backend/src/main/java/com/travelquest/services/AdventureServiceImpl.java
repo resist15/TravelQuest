@@ -11,8 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 //import org.locationtech.jts.geom.Coordinate;
 //import org.locationtech.jts.geom.GeometryFactory;
@@ -25,6 +24,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelquest.dto.AdventureDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
@@ -45,6 +46,10 @@ public class AdventureServiceImpl implements AdventureService {
     private final UserRepository userRepository;
     private final AdventureImageRepository imageRepository;
     private final CloudinaryService cloudinaryService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Value("${maptiler.api.key}")
     private String maptilerApiKey;
 //    private final GeometryFactory geometryFactory = new GeometryFactory();
@@ -349,10 +354,11 @@ public class AdventureServiceImpl implements AdventureService {
 				.collect(Collectors.toList());
 	}
 	
+
 	private String reverseGeocode(double latitude, double longitude) {
 	    try {
 	        String url = String.format(
-	            "https://api.maptiler.com/geocoding/%f,%f.json?key=%s",
+	            "https://api.maptiler.com/geocoding/%f,%f.json?key=%s&language=en",
 	            longitude, latitude, maptilerApiKey
 	        );
 
@@ -364,36 +370,35 @@ public class AdventureServiceImpl implements AdventureService {
 
 	        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-	        // Debug output
-	        System.out.println("Status code: " + response.statusCode());
-	        System.out.println("Response body: " + response.body());
-
 	        if (response.statusCode() != 200) {
-	            System.err.println("Non-200 response from MapTiler API");
+	            System.err.println("Non-200 response from MapTiler: " + response.body());
 	            return "Unknown";
 	        }
 
-	        JSONObject json = new JSONObject(response.body());
-	        JSONArray features = json.getJSONArray("features");
+	        JsonNode root = objectMapper.readTree(response.body());
+	        JsonNode features = root.get("features");
 
-	        for (int i = 0; i < features.length(); i++) {
-	            JSONObject feature = features.getJSONObject(i);
-	            JSONArray types = feature.getJSONArray("place_type");
-	            String placeName = feature.getString("place_name");
+	        if (features != null && features.isArray()) {
+	            for (JsonNode feature : features) {
+	                JsonNode placeTypes = feature.get("place_type");
+	                String placeName = feature.get("place_name").asText();
 
-	            for (int j = 0; j < types.length(); j++) {
-	                String type = types.getString(j);
-	                if ("region".equals(type) || "subregion".equals(type)) {
-	                    return placeName;
+	                if (placeTypes != null) {
+	                    for (JsonNode type : placeTypes) {
+	                        String typeValue = type.asText();
+	                        if ("region".equals(typeValue) || "subregion".equals(typeValue)) {
+	                            return placeName;
+	                        }
+	                    }
 	                }
 	            }
 	        }
-
 	    } catch (Exception e) {
 	        System.err.println("Reverse geocoding failed: " + e.getMessage());
 	    }
 
 	    return "Unknown";
 	}
+
 
 }
