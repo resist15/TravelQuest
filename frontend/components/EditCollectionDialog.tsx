@@ -15,6 +15,8 @@ import { useState } from "react"
 import axios from "@/lib/axios"
 import { CollectionDTO } from "@/types/CollectionDTO"
 import TripDurationSelector from "./TripDurationSelector"
+import { toast } from "react-toastify"
+import { ChevronRightIcon } from "lucide-react"
 
 export default function EditCollectionDialog({
   collection,
@@ -34,15 +36,13 @@ export default function EditCollectionDialog({
     setLoading(true)
     try {
       const formData = new FormData()
-      formData.append("data", JSON.stringify({
-        name,
-        description,
-        durationInDays: durationInDays,
-        // Optionally include other fields if your CollectionDTO has more
-      }))
-      if (imageFile) {
-        formData.append("image", imageFile)
-      }
+      formData.append(
+        "data",
+        new Blob(
+          [JSON.stringify({ name, description, durationInDays })],
+          { type: "application/json" }
+        )
+      )
 
       await axios.put(`/api/collections/${collection.id}`, formData, {
         headers: {
@@ -52,8 +52,10 @@ export default function EditCollectionDialog({
 
       onUpdated()
       setOpen(false)
+      toast.success("Collection updated successfully")
     } catch (err) {
       console.error("Failed to update collection", err)
+      toast.error("Failed to update collection: ")
     } finally {
       setLoading(false)
     }
@@ -62,7 +64,7 @@ export default function EditCollectionDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="ml-auto">Edit</Button>
+        <Button variant="outline" size="sm" className="ml-auto">Edit      <ChevronRightIcon /></Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
