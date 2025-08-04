@@ -1,6 +1,7 @@
 "use client";
 
 import { AdventureDTO } from "@/types/AdventureDTO";
+import { Star, StarOff } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 
@@ -34,7 +35,7 @@ export default function AdventureCard({ adventure }: AdventureCardProps) {
       )}
       <div className="p-4 space-y-2 flex-grow">
         <h3 className="text-lg font-semibold">{adventure.name}</h3>
-        <div className="flex flex-wrap gap-1 text-xs">
+        <div className="flex flex-wrap gap-1 text-xs mb-3">
           {adventure.tags.map((tag: string, idx: number) => (
             <span key={idx} className="px-2 py-0.5 rounded-full bg-secondary">
               {tag}
@@ -43,11 +44,19 @@ export default function AdventureCard({ adventure }: AdventureCardProps) {
         </div>
         {typeof adventure.rating === "number" && (
           <div className="flex items-center gap-1 text-yellow-500 text-sm">
-            {"★".repeat(Math.floor(adventure.rating))}
-            {"☆".repeat(5 - Math.floor(adventure.rating))}
-            <span className="text-muted-foreground ml-1">({adventure.rating.toFixed(1)})</span>
+            {[...Array(5)].map((_, i) =>
+              i < Math.floor(adventure.rating) ? (
+                <Star key={i} className="fill-yellow-500 text-yellow-500 w-4 h-4" />
+              ) : (
+                <Star key={i} className="text-yellow-500 w-4 h-4" />
+              )
+            )}
+            {/* <span className="text-muted-foreground ml-1">
+              ({adventure.rating.toFixed(1)})
+            </span> */}
           </div>
         )}
+
         {/* Display the fetched location name */}
         <p className="text-muted-foreground text-sm">📍 {adventure.location}</p>
       </div>

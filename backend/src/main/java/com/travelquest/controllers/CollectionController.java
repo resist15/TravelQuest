@@ -94,13 +94,13 @@ public class CollectionController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<Page<CollectionDTO>> getMyCollectionsPaginated(
+    public ResponseEntity<List<CollectionDTO>> getMyCollectionsPaginated(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "6") int size,
             @RequestParam(required = false) String searchTerm,
             Authentication auth
     ) {
-        Page<CollectionDTO> collections = collectionService.getCollectionsByUserPaginated(auth.getName(), page, size, searchTerm);
+        List<CollectionDTO> collections = collectionService.getCollectionsByUserPaginated(auth.getName(), page, size, searchTerm);
         return ResponseEntity.ok(collections);
     }
 

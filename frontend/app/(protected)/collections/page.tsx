@@ -32,7 +32,7 @@ export default function CollectionsPage() {
                     searchTerm: searchTerm || undefined,
                 }
             });
-            setCollections(res.data.content);
+            setCollections(res.data);
         } catch (err) {
             console.error("Failed to fetch collections");
         } finally {
