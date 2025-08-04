@@ -34,15 +34,21 @@ export default function AdventuresPage() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({
+    orderBy: "name",
+    orderDirection: "asc",
+  });
 
   const fetchAdventures = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get<Adventure[]>("/api/adventures/my", {
         params: {
+          sortBy: filters.orderBy,
+          order: filters.orderDirection,
           page,
           size: 6,
-          name: searchTerm || undefined,
+          searchTerm: searchTerm || undefined, // pass search
         },
       });
       setAdventures(response.data);
@@ -51,7 +57,7 @@ export default function AdventuresPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm]);
+  }, [filters, page, searchTerm]);
 
   useEffect(() => {
     fetchAdventures();
@@ -62,12 +68,22 @@ export default function AdventuresPage() {
     setPage(0);
   };
 
+  const handleApplyFilters = (appliedFilters: typeof filters & { searchTerm: string }) => {
+    setFilters(appliedFilters);
+    setSearchTerm(appliedFilters.searchTerm);
+    setPage(0);
+  };
+
   return (
     <div className="flex flex-col lg:flex-row bg-background min-h-screen text-foreground">
       {/* Sidebar for large screens */}
       <aside className="hidden lg:block lg:w-64">
         {/* Pass searchTerm and handleSearchChange to SidebarFilter */}
-        <SidebarFilter searchTerm={searchTerm} onSearchChange={handleSearchChange} />
+        <SidebarFilter
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+          onApplyFilters={handleApplyFilters}
+        />
       </aside>
 
       {/* Main content */}

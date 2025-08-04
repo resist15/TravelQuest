@@ -298,23 +298,29 @@ public class AdventureServiceImpl implements AdventureService {
 	}
 
 	@Override
-	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order) {
+	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search) {
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
 		String sortField = switch (sortBy.toLowerCase()) {
-		case "name", "rating", "createdAt", "updatedAt" -> sortBy;
-		default -> "createdAt";
+			case "name", "rating", "createdat", "updatedat" -> sortBy;
+			default -> "createdAt";
 		};
 
 		Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
-		Pageable pageable = PageRequest.of(0, 100, Sort.by(direction, sortField));
+		Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+        Page<Adventure> result;
 
-		return adventureRepository.findByUser(user, pageable)
+        if (search != null && !search.trim().isEmpty()) {
+            result = adventureRepository.findByUserAndNameContainingIgnoreCase(user, search, pageable);
+        } else {
+            result = adventureRepository.findByUser(user, pageable);
+        }
+		return result
 				.stream()
 				.map(this::toDTO)
 				.collect(Collectors.toList());
-
 	}
+
 	//
 }
