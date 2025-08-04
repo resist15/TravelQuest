@@ -14,6 +14,7 @@ import com.travelquest.dto.CollectionDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.Collection;
 import com.travelquest.entity.User;
+import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.repositories.AdventureRepository;
 import com.travelquest.repositories.CollectionRepository;
 import com.travelquest.repositories.UserRepository;
@@ -31,16 +32,26 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Transactional
-    public CollectionDTO createCollection(String email, CollectionDTO dto) {
+    public CollectionDTO createCollection(String email, CollectionDTO dto) throws ResourceNotFoundException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<Adventure> adventures = adventureRepository.findAllById(dto.getExistingAdventureIds());
+        
+        for (Long adventureId : dto.getExistingAdventureIds()) {
+            Adventure adventure = adventureRepository.findById(adventureId)
+                .orElseThrow(() -> new RuntimeException("Adventure not found: " + adventureId));
+            if (adventure.getCollection() != null) {
+                throw new ResourceNotFoundException("Adventure already belongs to a collection: " + adventureId);
+            }
+        }
 
         Collection collection = Collection.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .coverImage(dto.getCoverImage())
+                .startDate(dto.getStartDate())
+                .endDate(dto.getEndDate())
                 .user(user)
                 .adventures(adventures)
                 .build();
@@ -60,7 +71,8 @@ public class CollectionServiceImpl implements CollectionService {
         collection.setName(dto.getName());
         collection.setDescription(dto.getDescription());
         collection.setCoverImage(dto.getCoverImage());
-	    collection.setUpdatedAt(LocalDateTime.now());
+	    collection.setStartDate(dto.getStartDate());
+	    collection.setEndDate(dto.getEndDate());
 
         List<Adventure> adventures = adventureRepository.findAllById(dto.getExistingAdventureIds());
         adventures.forEach(a -> a.setCollection(collection));
@@ -161,7 +173,7 @@ public class CollectionServiceImpl implements CollectionService {
         Adventure adventure = adventureRepository.findById(adventureId)
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));
         
-        if (!adventure.getUser().getEmail().equals(email)) {
+        if (!adventure.getUser().getEmail().equals(email) && adventure.getCollection()==null) {
             throw new AccessDeniedException("Unauthorized");
         }
      
@@ -172,7 +184,6 @@ public class CollectionServiceImpl implements CollectionService {
             collectionRepository.save(collection); 
         }
     }
-
     
     private CollectionDTO toDTO(Collection collection) {
         return CollectionDTO.builder()
@@ -180,16 +191,14 @@ public class CollectionServiceImpl implements CollectionService {
                 .name(collection.getName())
                 .description(collection.getDescription())
                 .coverImage(collection.getCoverImage())
-                .userId(collection.getUser().getId())
-                .createdAt(collection.getCreatedAt())
-                .updatedAt(collection.getUpdatedAt())
+                .startDate(collection.getStartDate())
+                .endDate(collection.getEndDate())
                 .adventureCount(collection.getAdventures().size())
                 .existingAdventureIds(
                         collection.getAdventures().stream()
                                 .map(Adventure::getId)
                                 .collect(Collectors.toList())
                 )
-                
                 .build();
     }
 }

@@ -7,10 +7,13 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { CalendarDays, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CreateCollectionDialog from "@/components/CreateCollectionDialog";
+import { useEffect, useState } from "react";
+import axios from "@/lib/axios";
+import { CollectionDTO } from "@/types/CollectionDTO";
+import { format, parseISO } from "date-fns";
 
 const collections = [
     {
@@ -48,8 +51,21 @@ const collections = [
     },
 ];
 
+
 export default function CollectionsPage() {
+    const [collections, setCollections] = useState<CollectionDTO[]>([]);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchCollections = async () => {
+            try {
+                const res = await axios.get("/api/collections")
+                setCollections(res.data);
+            } catch (err) {
+                console.error("Failed to fetch collections")
+            }
+        }; fetchCollections();
+    })
 
     return (
         <div className="min-h-screen bg-background text-foreground px-6 py-8 md:px-12 lg:px-24">
@@ -69,7 +85,7 @@ export default function CollectionsPage() {
                     >
                         <div className="relative h-43 w-full overflow-hidden">
                             <img
-                                src={collection.coverImage}
+                                src={collection.coverImage ? collection.coverImage : "/adventure_place.webp"}
                                 alt={collection.name}
                                 className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                             />
@@ -78,21 +94,22 @@ export default function CollectionsPage() {
                             <CardTitle className="flex justify-between items-center text-lg mb-2">
                                 {collection.name}
                                 <Badge variant="secondary" className="text-xs">
-                                    {collection.tripCount} trips
+                                    {collection.adventureCount} trips
                                 </Badge>
                             </CardTitle>
 
                             <p className="text-sm text-muted-foreground">{collection.description}</p>
 
                             <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-2 text-xs">
+                                {/* <div className="flex items-center gap-2 text-xs">
                                     <MapPin className="h-4 w-4" />
                                     <span>{collection.location}</span>
-                                </div>
+                                </div> */}
                                 <div className="flex items-center gap-2 text-xs">
                                     <CalendarDays className="h-4 w-4" />
                                     <span>
-                                        {collection.startDate} → {collection.endDate}
+                                      {format(parseISO(collection.startDate), "d MMM")} –{" "}
+                                      {format(parseISO(collection.endDate), "d MMM, yyyy")}
                                     </span>
                                 </div>
                             </div>

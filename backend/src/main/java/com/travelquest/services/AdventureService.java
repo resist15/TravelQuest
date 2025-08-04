@@ -13,12 +13,11 @@ public interface AdventureService {
     public void deleteAdventure(Long adventureId, String email);
     void addImages(Long adventureId, List<MultipartFile> images, String email);
     void deleteImage(Long adventureId, String imageId, String email);
-    List<AdventureDTO> getAdventuresByUser(String email);
+    List<AdventureDTO> getAdventuresByUser(String email,boolean unassignedOnly);
     AdventureDTO getAdventureByIdAndEmail(Long id,String email) throws ResourceNotFoundException;
     List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size,String name);
     AdventureDTO getAdventureById(Long id);
     //
     List<AdventureDTO> getRecentAdventures();
 	List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search);
-    //
 }

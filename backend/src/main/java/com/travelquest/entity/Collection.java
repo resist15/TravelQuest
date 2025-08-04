@@ -41,29 +41,17 @@ public class Collection {
     private String description;
     private String coverImage;
     
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = this.createdAt;
-    }
-    
     @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    private LocalDateTime startDate;
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-    
+    @Column(nullable = false)
+    private LocalDateTime endDate;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
     @OneToMany(mappedBy = "collection", cascade = CascadeType.PERSIST)
     private List<Adventure> adventures = new ArrayList<>();
-
     
 }
