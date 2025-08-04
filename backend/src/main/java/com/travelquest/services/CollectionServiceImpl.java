@@ -33,7 +33,6 @@ public class CollectionServiceImpl implements CollectionService {
     private final UserRepository userRepository;
     private final AdventureRepository adventureRepository;
     private final CloudinaryService cloudinaryService;
-    private final AdventureService adventureService;
 
     @Override
     @Transactional
@@ -60,8 +59,7 @@ public class CollectionServiceImpl implements CollectionService {
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .coverImage(url)
-                .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
+                .durationInDays(dto.getDurationInDays())
                 .user(user)
                 .adventures(adventures)
                 .build();
@@ -88,9 +86,7 @@ public class CollectionServiceImpl implements CollectionService {
         collection.setName(dto.getName());
         collection.setDescription(dto.getDescription());
         collection.setCoverImage(dto.getCoverImage());
-	    collection.setStartDate(dto.getStartDate());
-	    collection.setEndDate(dto.getEndDate());
-
+        collection.setDurationInDays(dto.getDurationInDays());
         List<Adventure> adventures = adventureRepository.findAllById(dto.getExistingAdventureIds());
         adventures.forEach(a -> a.setCollection(collection));
         collection.getAdventures().clear();
@@ -208,8 +204,7 @@ public class CollectionServiceImpl implements CollectionService {
                 .name(collection.getName())
                 .description(collection.getDescription())
                 .coverImage(collection.getCoverImage())
-                .startDate(collection.getStartDate())
-                .endDate(collection.getEndDate())
+                .durationInDays(collection.getDurationInDays())
                 .adventureCount(collection.getAdventures().size())
                 .existingAdventureIds(
                         collection.getAdventures().stream()

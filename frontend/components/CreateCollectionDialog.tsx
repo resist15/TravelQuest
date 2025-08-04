@@ -13,11 +13,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
-import { DatePicker } from "@/components/DatePicker";
 import axios from "@/lib/axios";
 import { AdventureDTO } from "@/types/AdventureDTO";
 import { toast } from "react-toastify";
+import TripDurationSelector from "./TripDurationSelector";
 
 export default function CreateCollectionDialog() {
   const [step, setStep] = useState<1 | 2>(1);
@@ -25,6 +24,7 @@ export default function CreateCollectionDialog() {
   const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [durationDays, setDurationInDays] = useState(1)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -57,8 +57,7 @@ export default function CreateCollectionDialog() {
 
     const payload = {
       ...formData,
-      startDate: formData.startDate?.toISOString(),
-      endDate: formData.endDate?.toISOString(),
+      durationInDays: durationDays,
       existingAdventureIds: selectedAdventures,
     };
 
@@ -198,26 +197,8 @@ export default function CreateCollectionDialog() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <DatePicker
-                  date={formData.startDate}
-                  setDate={(date) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      startDate: date,
-                    }))
-                  }
-                  placeholder="Start Date"
-                />
-                <DatePicker
-                  date={formData.endDate}
-                  setDate={(date) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      endDate: date,
-                    }))
-                  }
-                  placeholder="End Date"
-                />
+                <TripDurationSelector onDurationChange={setDurationInDays} />
+
               </div>
               <div className="flex gap-2 justify-between">
                 <Button
