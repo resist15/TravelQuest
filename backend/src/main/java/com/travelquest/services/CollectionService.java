@@ -4,10 +4,11 @@ import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 import com.travelquest.dto.CollectionDTO;
+import com.travelquest.exceptions.ResourceNotFoundException;
 
 public interface CollectionService {
 	
-	CollectionDTO createCollection(String email, CollectionDTO dto);
+    CollectionDTO createCollection(String email, CollectionDTO dto) throws ResourceNotFoundException;
     CollectionDTO updateCollection(Long id, CollectionDTO dto);
     List<CollectionDTO> getCollectionsByUser(String email);
     List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size);

@@ -14,10 +14,9 @@ public class CollectionDTO {
 	private String name;
 	private String description;
 	private String coverImage;
-	private Long userId;
 	private int adventureCount;
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
+	private LocalDateTime startDate;
+	private LocalDateTime endDate;
 	private List<Long> existingAdventureIds;
 	
 }
