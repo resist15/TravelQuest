@@ -45,7 +45,7 @@ public class AdventureController {
             @RequestPart("data") AdventureDTO dto,
             @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
             Authentication auth) {
-        AdventureDTO updated = adventureService.updateAdventure(id, dto, newImages);
+        AdventureDTO updated = adventureService.updateAdventure(id, dto, newImages,auth.getName());
         return ResponseEntity.ok(updated);
     }
     
@@ -99,7 +99,7 @@ public class AdventureController {
     
     @GetMapping("dashboard")
     public ResponseEntity<DashboardStatsDTO> getDashboardStats(Authentication auth){
-    	return ResponseEntity.ok(adventureService.calculateAdventureStats(auth.getName()));
+    	return ResponseEntity.ok(adventureService.getAdventureStats(auth.getName()));
     }
     
     @GetMapping("/my")

@@ -34,6 +34,7 @@ import com.travelquest.dto.AdventureDTO;
 import com.travelquest.dto.DashboardStatsDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
+import com.travelquest.entity.DashboardStats;
 import com.travelquest.entity.User;
 import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.repositories.AdventureImageRepository;
@@ -87,13 +88,16 @@ public class AdventureServiceImpl implements AdventureService {
         Adventure savedAdventure = adventureRepository.save(adventure);
 
         uploadImages(images, user.getId(), savedAdventure);
-
+        updateUserStats(user);
         return toDTO(savedAdventure);
     }
 
     @Override
     @Transactional
-    public AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages) {
+    public AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages,String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Adventure adventure = adventureRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
@@ -119,12 +123,16 @@ public class AdventureServiceImpl implements AdventureService {
         }
 
         Adventure updated = adventureRepository.save(adventure);
+        updateUserStats(user);
         return toDTO(updated);
     }
 
     @Override
     @Transactional
     public void deleteAdventure(Long adventureId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Adventure adventure = adventureRepository.findById(adventureId)
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
@@ -141,6 +149,7 @@ public class AdventureServiceImpl implements AdventureService {
         }
 
         adventureRepository.delete(adventure);
+        updateUserStats(user);
     }
 
     @Override
@@ -354,11 +363,7 @@ public class AdventureServiceImpl implements AdventureService {
 				.collect(Collectors.toList());
 	}
 	
-	@Override
-	public DashboardStatsDTO calculateAdventureStats(String email) {
-	    User user = userRepository.findByEmail(email)
-	            .orElseThrow(() -> new RuntimeException("User not found"));
-
+	private void updateUserStats(User user) {
 	    List<Adventure> adventures = adventureRepository.findByUser(user);
 
 	    Set<String> cities = new HashSet<>();
@@ -366,18 +371,34 @@ public class AdventureServiceImpl implements AdventureService {
 	    Set<String> countries = new HashSet<>();
 
 	    for (Adventure adv : adventures) {
-	        Map<String, String> geoData = reverseGeocode(adv.getLatitude(), adv.getLongitude());
+	        Map<String, String> geo = reverseGeocode(adv.getLatitude(), adv.getLongitude());
 
-	        if (geoData.get("city") != null) cities.add(geoData.get("city"));
-	        if (geoData.get("region") != null) regions.add(geoData.get("region"));
-	        if (geoData.get("country") != null) countries.add(geoData.get("country"));
+	        if (geo.get("city") != null) cities.add(geo.get("city"));
+	        if (geo.get("region") != null) regions.add(geo.get("region"));
+	        if (geo.get("country") != null) countries.add(geo.get("country"));
 	    }
 
+	    DashboardStats stats = DashboardStats.builder()
+	        .totalAdventures(adventures.size())
+	        .totalCities(cities.size())
+	        .totalRegions(regions.size())
+	        .totalCountries(countries.size())
+	        .build();
+
+	    user.setDashboardStats(stats);
+	    userRepository.save(user);
+	}
+
+	@Override
+	public DashboardStatsDTO getAdventureStats(String email) {
+	    User user = userRepository.findByEmail(email)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+	    
 	    return DashboardStatsDTO.builder()
-	            .totalAdventures(adventures.size())
-	            .totalCities(cities.size())
-	            .totalRegions(regions.size())
-	            .totalCountries(countries.size())
+	            .totalAdventures(user.getDashboardStats().getTotalAdventures())
+	            .totalCities(user.getDashboardStats().getTotalCities())
+	            .totalRegions(user.getDashboardStats().getTotalRegions())
+	            .totalCountries(user.getDashboardStats().getTotalCountries())
 	            .build();
 	}
 
@@ -417,7 +438,7 @@ public class AdventureServiceImpl implements AdventureService {
 	                for (JsonNode type : placeTypes) {
 	                    String typeValue = type.asText();
 	                    switch (typeValue) {
-	                        case "place" -> result.putIfAbsent("city", name);
+	                    	case "place", "locality", "municipality", "localadmin" -> result.putIfAbsent("city", name);
 	                        case "region", "subregion" -> result.putIfAbsent("region", name);
 	                        case "country" -> result.putIfAbsent("country", name);
 	                    }
