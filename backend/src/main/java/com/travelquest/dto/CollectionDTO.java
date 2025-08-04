@@ -3,7 +3,6 @@ package com.travelquest.dto;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -15,8 +14,7 @@ public class CollectionDTO {
 	private String description;
 	private String coverImage;
 	private int adventureCount;
-	private LocalDateTime startDate;
-	private LocalDateTime endDate;
+	private int durationInDays;
 	private List<Long> existingAdventureIds;
 	
 }
