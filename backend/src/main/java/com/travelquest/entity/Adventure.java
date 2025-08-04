@@ -42,12 +42,14 @@ public class Adventure {
     private double rating;
     private String description;
     private String link;
-
+    private double latitude;
+    private double longitude;
+    
     @ElementCollection
     private List<String> tags;
 
-    @Column(columnDefinition = "geometry(Point,4326)")
-    private Point geoPoint;
+//    @Column(columnDefinition = "geometry(Point,4326)")
+//    private Point geoPoint;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

@@ -15,43 +15,6 @@ import axios from "@/lib/axios";
 import { CollectionDTO } from "@/types/CollectionDTO";
 import { format, parseISO } from "date-fns";
 
-const collections = [
-    {
-        id: "1",
-        name: "France 2024",
-        description: "A journey through France – Paris, Nice, and Lyon.",
-        coverImage:
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", // France
-        startDate: "2024-04-10",
-        endDate: "2024-04-25",
-        location: "France",
-        tripCount: 3,
-    },
-    {
-        id: "2",
-        name: "Japan Winter Tour",
-        description: "Exploring Tokyo, Kyoto, and Sapporo in the snow.",
-        coverImage:
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", // France
-        startDate: "2023-12-15",
-        endDate: "2024-01-02",
-        location: "Japan",
-        tripCount: 4,
-    },
-    {
-        id: "3",
-        name: "Italy Summer Roadtrip",
-        description: "Driving across Rome, Florence, and Venice.",
-        coverImage:
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80", // France
-        startDate: "2023-07-05",
-        endDate: "2023-07-20",
-        location: "Italy",
-        tripCount: 5,
-    },
-];
-
-
 export default function CollectionsPage() {
     const [collections, setCollections] = useState<CollectionDTO[]>([]);
     const router = useRouter();
