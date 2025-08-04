@@ -5,12 +5,11 @@ import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
+//import org.locationtech.jts.geom.Coordinate;
+//import org.locationtech.jts.geom.GeometryFactory;
+//import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +38,7 @@ public class AdventureServiceImpl implements AdventureService {
     private final UserRepository userRepository;
     private final AdventureImageRepository imageRepository;
     private final CloudinaryService cloudinaryService;
-    private final GeometryFactory geometryFactory = new GeometryFactory();
+//    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Override
     @Transactional
@@ -47,8 +46,8 @@ public class AdventureServiceImpl implements AdventureService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Point geoPoint = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
-        geoPoint.setSRID(4326);
+//        Point geoPoint = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
+//        geoPoint.setSRID(4326);
 
         Adventure adventure = Adventure.builder()
                 .name(dto.getName())
@@ -57,7 +56,9 @@ public class AdventureServiceImpl implements AdventureService {
                 .description(dto.getDescription())
                 .link(dto.getLink())
                 .rating(dto.getRating())
-                .geoPoint(geoPoint)
+                .latitude(dto.getLatitude())
+                .longitude(dto.getLongitude())
+//                .geoPoint(geoPoint)
                 .user(user)
                 .build();
 
@@ -80,11 +81,13 @@ public class AdventureServiceImpl implements AdventureService {
         adventure.setDescription(dto.getDescription());
         adventure.setLink(dto.getLink());
         adventure.setRating(dto.getRating());
-		    adventure.setUpdatedAt(LocalDateTime.now());
+        adventure.setUpdatedAt(LocalDateTime.now());
+        adventure.setLatitude(dto.getLatitude());
+        adventure.setLongitude(dto.getLongitude());
 
-        Point point = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
-        point.setSRID(4326);
-        adventure.setGeoPoint(point);
+//        Point point = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
+//        point.setSRID(4326);
+//        adventure.setGeoPoint(point);
 
         if (newImages != null && !newImages.isEmpty()) {
             uploadImages(newImages, adventure.getUser().getId(), adventure);
@@ -275,8 +278,10 @@ public class AdventureServiceImpl implements AdventureService {
                 .id(adventure.getId())
                 .name(adventure.getName())
                 .location(adventure.getLocation())
-                .latitude(adventure.getGeoPoint().getY())
-                .longitude(adventure.getGeoPoint().getX())
+                .latitude(adventure.getLatitude())
+                .longitude(adventure.getLongitude())
+//                .latitude(adventure.getGeoPoint().getY())
+//                .longitude(adventure.getGeoPoint().getX())
                 .tags(adventure.getTags())
                 .rating(adventure.getRating())
                 .description(adventure.getDescription())
