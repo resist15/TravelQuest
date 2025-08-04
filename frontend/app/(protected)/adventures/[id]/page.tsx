@@ -51,7 +51,6 @@ export default function AdventureDetails() {
   const [error, setError] = useState(false);
   const [photosToUpload, setPhotosToUpload] = useState<File[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [locationName, setLocationName] = useState<string>("");
   const [editing, setEditing] = useState(false);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -62,20 +61,6 @@ export default function AdventureDetails() {
   // New state for image deletion
   const [imageToDelete, setImageToDelete] = useState<string | null>(null);
   const [showImageDeleteDialog, setShowImageDeleteDialog] = useState(false);
-
-  const fetchLocationName = useCallback(async (lat: number, lon: number) => {
-    try {
-      const res = await fetch(
-        `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=hCWgkMCmHCAFZw9YCnLa`
-      );
-      const data = await res.json();
-      const place = data?.features?.[2]?.place_name || "Unknown location";
-      setLocationName(place);
-    } catch (err) {
-      console.error("Failed to reverse geocode:", err);
-      setLocationName("Unknown location");
-    }
-  }, []);
 
   useEffect(() => {
     const fetchAdventure = async () => {
@@ -92,15 +77,6 @@ export default function AdventureDetails() {
     };
     fetchAdventure();
   }, [id]);
-
-  useEffect(() => {
-    const currentLat = editing ? formState?.latitude : adventure?.latitude;
-    const currentLon = editing ? formState?.longitude : adventure?.longitude;
-
-    if (currentLat && currentLon) {
-      fetchLocationName(currentLat, currentLon);
-    }
-  }, [adventure, formState, editing, fetchLocationName]);
 
   useEffect(() => {
     if (editing && tagsInputRef.current) {
@@ -387,7 +363,7 @@ export default function AdventureDetails() {
 
       <div className="flex justify-between items-center mt-4">
         <p className="text-muted-foreground flex items-center gap-2">
-          <MapPin className="w-4 h-4" /> {locationName}
+          <MapPin className="w-4 h-4" /> {adventure.location}
         </p>
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
