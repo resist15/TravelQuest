@@ -88,11 +88,6 @@ public class AdventureController {
         return ResponseEntity.ok(adventureService.getAdventureByIdAndEmail(id,auth.getName()));
     }
     
-    @GetMapping("/recent")
-    public ResponseEntity<List<AdventureDTO>> getRecentAdventures() {
-        return ResponseEntity.ok(adventureService.getRecentAdventures());
-    }
-
     @GetMapping("/my")
     public ResponseEntity<List<AdventureDTO>> getAdventuresSorted(
             @RequestParam(defaultValue = "name") String sortBy,
