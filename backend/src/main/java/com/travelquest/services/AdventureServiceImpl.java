@@ -323,13 +323,6 @@ public class AdventureServiceImpl implements AdventureService {
     //
 
 	@Override
-	public List<AdventureDTO> getRecentAdventures() {
-		return adventureRepository.findTopThreeByOrderByCreatedAtDesc().stream()
-				.map(this::toDTO)
-				.collect(Collectors.toList());
-	}
-
-	@Override
 	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search) {
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new RuntimeException("User not found"));
