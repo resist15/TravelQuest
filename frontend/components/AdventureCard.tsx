@@ -24,14 +24,24 @@ export default function AdventureCard({ adventure }: AdventureCardProps) {
         `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=hCWgkMCmHCAFZw9YCnLa`
       );
       const data = await res.json();
-      const place = data?.features?.[5]?.place_name || "Unknown location";
 
+      const regionFeature = data.features.find((feature: any) =>
+        feature.place_type.includes("region")
+      );
+
+      const subregionFeature = data.features.find((feature: any) =>
+        feature.place_type.includes("subregion")
+      );
+
+      const place = regionFeature?.place_name || subregionFeature?.place_name || "Unknown location";
+      console.log(data);
       setLocationName(place);
     } catch (err) {
       console.error("Failed to reverse geocode:", err);
       setLocationName("Unknown location");
     }
   }, []);
+
 
   useEffect(() => {
     if (adventure.latitude && adventure.longitude) {
@@ -42,12 +52,12 @@ export default function AdventureCard({ adventure }: AdventureCardProps) {
   const coverImageUrl =
     adventure.imageUrls && adventure.imageUrls.length > 0
       ? adventure.imageUrls[0]
-      : "/placeholder-adventure.jpg";
+      : "/adventure_place.webp";
 
   return (
     <div className="bg-card rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
       {/* Check if a valid image URL exists */}
-      {coverImageUrl && coverImageUrl !== "/placeholder-adventure.jpg" ? (
+      {coverImageUrl || coverImageUrl == "/adventure_place.webp" ? (
         <Image
           src={coverImageUrl}
           alt={adventure.name}
