@@ -358,7 +358,7 @@ public class AdventureServiceImpl implements AdventureService {
 	private String reverseGeocode(double latitude, double longitude) {
 	    try {
 	        String url = String.format(
-	            "https://api.maptiler.com/geocoding/%f,%f.json?key=%s",
+	            "https://api.maptiler.com/geocoding/%f,%f.json?key=%s&language=en",
 	            longitude, latitude, maptilerApiKey
 	        );
 
