@@ -1,12 +1,19 @@
 package com.travelquest.services;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 //import org.locationtech.jts.geom.Coordinate;
 //import org.locationtech.jts.geom.GeometryFactory;
 //import org.locationtech.jts.geom.Point;
@@ -38,6 +45,8 @@ public class AdventureServiceImpl implements AdventureService {
     private final UserRepository userRepository;
     private final AdventureImageRepository imageRepository;
     private final CloudinaryService cloudinaryService;
+    @Value("${maptiler.api.key}")
+    private String maptilerApiKey;
 //    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Override
@@ -48,10 +57,12 @@ public class AdventureServiceImpl implements AdventureService {
 
 //        Point geoPoint = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
 //        geoPoint.setSRID(4326);
+        
+        String resolvedLocation = reverseGeocode(dto.getLatitude(), dto.getLongitude());
 
         Adventure adventure = Adventure.builder()
                 .name(dto.getName())
-                .location(dto.getLocation())
+                .location(resolvedLocation)
                 .tags(dto.getTags())
                 .description(dto.getDescription())
                 .link(dto.getLink())
@@ -75,8 +86,10 @@ public class AdventureServiceImpl implements AdventureService {
         Adventure adventure = adventureRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
+        String resolvedLocation = reverseGeocode(dto.getLatitude(), dto.getLongitude());
+        
         adventure.setName(dto.getName());
-        adventure.setLocation(dto.getLocation());
+        adventure.setLocation(resolvedLocation);
         adventure.setTags(dto.getTags());
         adventure.setDescription(dto.getDescription());
         adventure.setLink(dto.getLink());
@@ -335,5 +348,52 @@ public class AdventureServiceImpl implements AdventureService {
 				.map(this::toDTO)
 				.collect(Collectors.toList());
 	}
-	//
+	
+	private String reverseGeocode(double latitude, double longitude) {
+	    try {
+	        String url = String.format(
+	            "https://api.maptiler.com/geocoding/%f,%f.json?key=%s",
+	            longitude, latitude, maptilerApiKey
+	        );
+
+	        HttpClient client = HttpClient.newHttpClient();
+	        HttpRequest request = HttpRequest.newBuilder()
+	                .uri(URI.create(url))
+	                .GET()
+	                .build();
+
+	        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+	        // Debug output
+	        System.out.println("Status code: " + response.statusCode());
+	        System.out.println("Response body: " + response.body());
+
+	        if (response.statusCode() != 200) {
+	            System.err.println("Non-200 response from MapTiler API");
+	            return "Unknown";
+	        }
+
+	        JSONObject json = new JSONObject(response.body());
+	        JSONArray features = json.getJSONArray("features");
+
+	        for (int i = 0; i < features.length(); i++) {
+	            JSONObject feature = features.getJSONObject(i);
+	            JSONArray types = feature.getJSONArray("place_type");
+	            String placeName = feature.getString("place_name");
+
+	            for (int j = 0; j < types.length(); j++) {
+	                String type = types.getString(j);
+	                if ("region".equals(type) || "subregion".equals(type)) {
+	                    return placeName;
+	                }
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        System.err.println("Reverse geocoding failed: " + e.getMessage());
+	    }
+
+	    return "Unknown";
+	}
+
 }

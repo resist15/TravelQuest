@@ -44,6 +44,10 @@ export default function EditCollectionDialog({
         )
       )
 
+      if (imageFile) {
+        formData.append("image", imageFile)
+      }
+      
       await axios.put(`/api/collections/${collection.id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data"

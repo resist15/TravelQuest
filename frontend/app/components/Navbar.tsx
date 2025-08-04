@@ -71,7 +71,7 @@ export default function Navbar() {
 
   return (
     <motion.nav
-      className="w-full bg-background text-foreground border-b border-border"
+      className="w-full border-b border-border"
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -89,14 +89,13 @@ export default function Navbar() {
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  animate={isActive ? { scale: 1.1, backgroundColor: "var(--accent)", color: "var(--accent-foreground)" } : {}}
-                  transition={{ type: "spring", stiffness: 300, duration: 0.2 }}
-                  className="rounded-md"
+                  className={`rounded-md ${isActive ? "bg-accent text-accent-foreground" : ""}`}
                 >
                   <Button variant={isActive ? "secondary" : "ghost"} className="flex gap-1 items-center">
                     {icon} {label}
                   </Button>
                 </motion.div>
+
               </Link>
             );
           })}
