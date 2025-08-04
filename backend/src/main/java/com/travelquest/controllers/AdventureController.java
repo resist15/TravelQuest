@@ -5,10 +5,19 @@ import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.DashboardStatsDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.services.AdventureService;
 
@@ -86,6 +95,11 @@ public class AdventureController {
     @GetMapping("/{id}")
     public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id,Authentication auth) throws ResourceNotFoundException {
         return ResponseEntity.ok(adventureService.getAdventureByIdAndEmail(id,auth.getName()));
+    }
+    
+    @GetMapping("dashboard")
+    public ResponseEntity<DashboardStatsDTO> getDashboardStats(Authentication auth){
+    	return ResponseEntity.ok(adventureService.calculateAdventureStats(auth.getName()));
     }
     
     @GetMapping("/my")

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.DashboardStatsDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
 
 public interface AdventureService {
@@ -20,4 +21,5 @@ public interface AdventureService {
     //
 	List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search);
     List<AdventureDTO> getAdventuresByCollectionId(Long id);
+	DashboardStatsDTO calculateAdventureStats(String email);
 }

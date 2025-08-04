@@ -7,10 +7,12 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.DashboardStatsDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
 import com.travelquest.entity.User;
@@ -351,6 +354,32 @@ public class AdventureServiceImpl implements AdventureService {
 				.collect(Collectors.toList());
 	}
 	
+	@Override
+	public DashboardStatsDTO calculateAdventureStats(String email) {
+	    User user = userRepository.findByEmail(email)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+
+	    List<Adventure> adventures = adventureRepository.findByUser(user);
+
+	    Set<String> cities = new HashSet<>();
+	    Set<String> regions = new HashSet<>();
+	    Set<String> countries = new HashSet<>();
+
+	    for (Adventure adv : adventures) {
+	        Map<String, String> geoData = reverseGeocode(adv.getLatitude(), adv.getLongitude());
+
+	        if (geoData.get("city") != null) cities.add(geoData.get("city"));
+	        if (geoData.get("region") != null) regions.add(geoData.get("region"));
+	        if (geoData.get("country") != null) countries.add(geoData.get("country"));
+	    }
+
+	    return DashboardStatsDTO.builder()
+	            .totalAdventures(adventures.size())
+	            .totalCities(cities.size())
+	            .totalRegions(regions.size())
+	            .totalCountries(countries.size())
+	            .build();
+	}
 
 	private Map<String, String> reverseGeocode(double latitude, double longitude) {
 	    Map<String, String> result = new HashMap<>();
