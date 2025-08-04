@@ -6,8 +6,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -63,8 +65,9 @@ public class AdventureServiceImpl implements AdventureService {
 //        Point geoPoint = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
 //        geoPoint.setSRID(4326);
         
-        String resolvedLocation = reverseGeocode(dto.getLatitude(), dto.getLongitude());
-
+        Map<String, String> geoData = reverseGeocode(dto.getLatitude(), dto.getLongitude());
+        String resolvedLocation = geoData.getOrDefault("region", "Unknown");
+        
         Adventure adventure = Adventure.builder()
                 .name(dto.getName())
                 .location(resolvedLocation)
@@ -91,7 +94,8 @@ public class AdventureServiceImpl implements AdventureService {
         Adventure adventure = adventureRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));
 
-        String resolvedLocation = reverseGeocode(dto.getLatitude(), dto.getLongitude());
+        Map<String, String> geoData = reverseGeocode(dto.getLatitude(), dto.getLongitude());
+        String resolvedLocation = geoData.getOrDefault("region", "Unknown");
         
         adventure.setName(dto.getName());
         adventure.setLocation(resolvedLocation);
@@ -348,7 +352,12 @@ public class AdventureServiceImpl implements AdventureService {
 	}
 	
 
-	private String reverseGeocode(double latitude, double longitude) {
+	private Map<String, String> reverseGeocode(double latitude, double longitude) {
+	    Map<String, String> result = new HashMap<>();
+	    result.put("city", null);
+	    result.put("region", null);
+	    result.put("country", null);
+
 	    try {
 	        String url = String.format(
 	            "https://api.maptiler.com/geocoding/%f,%f.json?key=%s&language=en",
@@ -365,7 +374,7 @@ public class AdventureServiceImpl implements AdventureService {
 
 	        if (response.statusCode() != 200) {
 	            System.err.println("Non-200 response from MapTiler: " + response.body());
-	            return "Unknown";
+	            return result;
 	        }
 
 	        JsonNode root = objectMapper.readTree(response.body());
@@ -374,24 +383,24 @@ public class AdventureServiceImpl implements AdventureService {
 	        if (features != null && features.isArray()) {
 	            for (JsonNode feature : features) {
 	                JsonNode placeTypes = feature.get("place_type");
-	                String placeName = feature.get("place_name").asText();
+	                String name = feature.get("text").asText();
 
-	                if (placeTypes != null) {
-	                    for (JsonNode type : placeTypes) {
-	                        String typeValue = type.asText();
-	                        if ("region".equals(typeValue) || "subregion".equals(typeValue)) {
-	                            return placeName;
-	                        }
+	                for (JsonNode type : placeTypes) {
+	                    String typeValue = type.asText();
+	                    switch (typeValue) {
+	                        case "place" -> result.putIfAbsent("city", name);
+	                        case "region", "subregion" -> result.putIfAbsent("region", name);
+	                        case "country" -> result.putIfAbsent("country", name);
 	                    }
 	                }
 	            }
 	        }
+
 	    } catch (Exception e) {
 	        System.err.println("Reverse geocoding failed: " + e.getMessage());
 	    }
 
-	    return "Unknown";
+	    return result;
 	}
-
 
 }
