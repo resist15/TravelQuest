@@ -7,6 +7,7 @@ import com.travelquest.enums.Role;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -45,6 +46,10 @@ public class User {
     private Role role;
     
     private String profilePicture;
+    
+    @Embedded
+    @Builder.Default
+    private DashboardStats dashboardStats = new DashboardStats();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Adventure> adventures = new ArrayList<>();

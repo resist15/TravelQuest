@@ -10,7 +10,7 @@ import com.travelquest.exceptions.ResourceNotFoundException;
 
 public interface AdventureService {
     AdventureDTO createAdventure(String email, AdventureDTO dto, List<MultipartFile> images);
-    AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages);
+    AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages,String email);
     public void deleteAdventure(Long adventureId, String email);
     void addImages(Long adventureId, List<MultipartFile> images, String email);
     void deleteImage(Long adventureId, String imageId, String email);
@@ -21,5 +21,5 @@ public interface AdventureService {
     //
 	List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search);
     List<AdventureDTO> getAdventuresByCollectionId(Long id);
-	DashboardStatsDTO calculateAdventureStats(String email);
+	DashboardStatsDTO getAdventureStats(String email);
 }
