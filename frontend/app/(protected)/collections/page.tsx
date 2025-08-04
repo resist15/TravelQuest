@@ -12,25 +12,12 @@ import { useEffect, useState } from "react";
 import axios from "@/lib/axios";
 import { CollectionDTO } from "@/types/CollectionDTO";
 import { AnimatePresence, motion } from "framer-motion";
+import { formatDuration } from "@/lib/utils";
 
 export default function CollectionsPage() {
     const [collections, setCollections] = useState<CollectionDTO[]>([]);
     const router = useRouter();
     const [loading, setLoading] = useState(true);
-
-    function formatDuration(days: number): string {
-        if (days < 7) {
-            return `${days} day${days > 1 ? "s" : ""}`
-        } else if (days % 7 === 0 && days < 30) {
-            const weeks = days / 7
-            return `${weeks} week${weeks > 1 ? "s" : ""}`
-        } else if (days % 30 === 0) {
-            const months = days / 30
-            return `${months} month${months > 1 ? "s" : ""}`
-        } else {
-            return `${days} days`
-        }
-    }
 
     useEffect(() => {
         const fetchCollections = async () => {

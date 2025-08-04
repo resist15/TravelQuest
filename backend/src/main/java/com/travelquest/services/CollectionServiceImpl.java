@@ -3,6 +3,7 @@ package com.travelquest.services;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -92,11 +93,15 @@ public class CollectionServiceImpl implements CollectionService {
         	url = cloudinaryService.uploadImage(image, user.getId().toString(), user.getId().toString());
         }
         
+        List<Long> advIds = new ArrayList<Long>();
+        for(Adventure adv: collection.getAdventures()) {
+        	advIds.add(adv.getId());
+        }
         collection.setName(dto.getName());
         collection.setDescription(dto.getDescription());
         collection.setCoverImage(url);
         collection.setDurationInDays(dto.getDurationInDays());
-        List<Adventure> adventures = adventureRepository.findAllById(dto.getExistingAdventureIds());
+        List<Adventure> adventures = adventureRepository.findAllById(advIds);
         adventures.forEach(a -> a.setCollection(collection));
         collection.getAdventures().clear();
         collection.getAdventures().addAll(adventures);

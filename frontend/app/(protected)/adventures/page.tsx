@@ -12,24 +12,15 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Import Input component
 import { SlidersHorizontal } from "lucide-react";
 import axios from "@/lib/axios";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { AdventureDTO } from "@/types/AdventureDTO";
 
-interface Adventure {
-  id: number;
-  name: string;
-  location: string;
-  tags: string[];
-  imageUrls: string[];
-  latitude: number;
-  longitude: number;
-}
 
 export default function AdventuresPage() {
-  const [adventures, setAdventures] = useState<Adventure[]>([]);
+  const [adventures, setAdventures] = useState<AdventureDTO[]>([]);
   const [page, setPage] = useState(0);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -42,7 +33,7 @@ export default function AdventuresPage() {
   const fetchAdventures = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get<Adventure[]>("/api/adventures/my", {
+      const response = await axios.get<AdventureDTO[]>("/api/adventures/my", {
         params: {
           sortBy: filters.orderBy,
           order: filters.orderDirection,
