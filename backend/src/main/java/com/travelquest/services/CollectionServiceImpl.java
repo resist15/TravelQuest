@@ -72,7 +72,7 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Transactional
-    public CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws AccessDeniedException {
+    public CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws IOException {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -83,9 +83,18 @@ public class CollectionServiceImpl implements CollectionService {
             throw new AccessDeniedException("Unauthorized");
         }
         
+        String url = "/adventure_place.webp";
+        
+        if(image != null) {
+        	if(!collection.getCoverImage().equals(url)) {
+        		cloudinaryService.deleteImage(collection.getCoverImage());
+        	}
+        	url = cloudinaryService.uploadImage(image, user.getId().toString(), user.getId().toString());
+        }
+        
         collection.setName(dto.getName());
         collection.setDescription(dto.getDescription());
-        collection.setCoverImage(dto.getCoverImage());
+        collection.setCoverImage(url);
         collection.setDurationInDays(dto.getDurationInDays());
         List<Adventure> adventures = adventureRepository.findAllById(dto.getExistingAdventureIds());
         adventures.forEach(a -> a.setCollection(collection));
