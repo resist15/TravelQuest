@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import { ToastProvider } from "@/components/ToastProvider";
 import { toast } from "react-toastify";
+import Footer from "./Footer";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -65,6 +66,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         {isProtected ? <LayoutWrapper>{children}</LayoutWrapper> : children}
       </main>
       <ToastProvider />
+      {!hideNavbar && <Footer />}
     </ThemeProvider>
   );
 }
