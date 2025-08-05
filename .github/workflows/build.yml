@@ -1,0 +1,60 @@
+name: Build TravelQuest
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-backend:
+    name: Build Spring Boot Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build JAR with Maven
+        working-directory: ./backend
+        run: mvn clean package -DskipTests
+
+      - name: Archive JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: travelquest-backend
+          path: backend/target/*.jar
+
+  build-frontend:
+    name: Build Next.js Frontend
+    runs-on: ubuntu-latest
+    needs: build-backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Archive build
+        uses: actions/upload-artifact@v4
+        with:
+          name: travelquest-frontend
+          path: frontend/.next
