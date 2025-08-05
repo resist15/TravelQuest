@@ -5,7 +5,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, MapPin, Search } from "lucide-react";
+import { CalendarDays, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CreateCollectionDialog from "@/components/CreateCollectionDialog";
 import { useEffect, useState } from "react";
@@ -34,7 +34,7 @@ export default function CollectionsPage() {
             });
             setCollections(res.data);
         } catch (err) {
-            console.error("Failed to fetch collections");
+            console.error("Failed to fetch collections", err);
         } finally {
             setLoading(false);
         }

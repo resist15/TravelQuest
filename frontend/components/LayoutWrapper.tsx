@@ -27,6 +27,7 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
           router.replace("/login");
         }
       } catch (e) {
+        console.error(e)
         localStorage.removeItem("token");
         router.replace("/login");
       }

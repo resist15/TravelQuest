@@ -23,6 +23,7 @@ export default function LoginPage() {
       toast.success("Login successful!");
       router.push("/");
     } catch (err) {
+      console.error("Failed to login:", err);
       toast.error("Invalid email or password");
     } finally {
       setLoading(false);

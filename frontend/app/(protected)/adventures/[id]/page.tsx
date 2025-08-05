@@ -38,8 +38,9 @@ import "yet-another-react-lightbox/plugins/thumbnails.css";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 
-import NextJsImage from "@/components/NextJsImage";
+import { NextJsImage, NextJsThumbnail } from "@/components/NextJsImage";
 import dynamic from "next/dynamic";
+import { isAxiosError } from "axios";
 
 export default function AdventureDetails() {
   const Lightbox = dynamic(() => import("yet-another-react-lightbox"), { ssr: false });
@@ -69,7 +70,12 @@ export default function AdventureDetails() {
         setAdventure(res.data);
         setFormState(res.data);
         setBrokenImageUrls(new Set());
-      } catch (err) {
+      } catch (err: unknown) {
+        let msg = "Failed fetching adventures";
+        if (isAxiosError(err)) {
+          msg = err.response?.data?.message || msg;
+          toast.error(msg)
+        }
         setError(true);
       } finally {
         setLoading(false);
@@ -565,7 +571,7 @@ export default function AdventureDetails() {
           src
         }))}
         carousel={{ finite: true }}
-        render={{ slide: NextJsImage, thumbnail: NextJsImage }}
+        render={{ slide: NextJsImage, thumbnail: NextJsThumbnail }}
         plugins={[Zoom, Thumbnails]}
       />
 

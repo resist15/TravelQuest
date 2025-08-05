@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import axios from "@/lib/axios";
 import { toast } from "react-toastify";
+import { isAxiosError } from "axios"; // still import this from base axios
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,14 +32,16 @@ export default function RegisterPage() {
   const handleRegister = async () => {
     setLoading(true);
     setError("");
-
     try {
-      const res = await axios.post("/api/users/register", form);
+      await axios.post("/api/users/register", form);
       router.push("/login");
-      toast.success("Registration Successful!")
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "Registration failed";
-      toast.error(msg)
+      toast.success("Registration Successful!");
+    } catch (err: unknown) {
+      let msg = "Registration failed";
+      if (isAxiosError(err)) {
+        msg = err.response?.data?.message || msg;
+      }
+      toast.error(msg);
       setError(msg);
     } finally {
       setLoading(false);
