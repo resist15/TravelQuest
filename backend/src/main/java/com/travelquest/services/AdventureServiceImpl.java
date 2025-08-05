@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-//import org.locationtech.jts.geom.Coordinate;
 //import org.locationtech.jts.geom.GeometryFactory;
 //import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
@@ -58,7 +57,6 @@ public class AdventureServiceImpl implements AdventureService {
 
     @Value("${maptiler.api.key}")
     private String maptilerApiKey;
-//    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @Override
     @Transactional
@@ -66,9 +64,6 @@ public class AdventureServiceImpl implements AdventureService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-//        Point geoPoint = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
-//        geoPoint.setSRID(4326);
-        
         Map<String, String> geoData = reverseGeocode(dto.getLatitude(), dto.getLongitude());
         String resolvedLocation = geoData.getOrDefault("region", "Unknown");
         
@@ -81,7 +76,6 @@ public class AdventureServiceImpl implements AdventureService {
                 .rating(dto.getRating())
                 .latitude(dto.getLatitude())
                 .longitude(dto.getLongitude())
-//                .geoPoint(geoPoint)
                 .user(user)
                 .build();
 
@@ -100,6 +94,10 @@ public class AdventureServiceImpl implements AdventureService {
 
         Adventure adventure = adventureRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Adventure not found"));
+        
+        if (!adventure.getUser().getEmail().equals(email)) {
+            throw new AccessDeniedException("Unauthorized");
+        }
 
         Map<String, String> geoData = reverseGeocode(dto.getLatitude(), dto.getLongitude());
         String resolvedLocation = geoData.getOrDefault("region", "Unknown");
@@ -113,10 +111,6 @@ public class AdventureServiceImpl implements AdventureService {
         adventure.setUpdatedAt(LocalDateTime.now());
         adventure.setLatitude(dto.getLatitude());
         adventure.setLongitude(dto.getLongitude());
-
-//        Point point = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
-//        point.setSRID(4326);
-//        adventure.setGeoPoint(point);
 
         if (newImages != null && !newImages.isEmpty()) {
             uploadImages(newImages, adventure.getUser().getId(), adventure);
@@ -165,22 +159,6 @@ public class AdventureServiceImpl implements AdventureService {
         uploadImages(images, adventure.getUser().getId(), adventure);
     }
 
-//    @Override
-//    @Transactional
-//    public void deleteImage(String imageId, String email) {
-//        AdventureImage image = imageRepository.findById(imageId)
-//                .orElseThrow(() -> new RuntimeException("Image not found"));
-//
-//        Adventure adventure = image.getAdventure();
-//        if (!adventure.getUser().getEmail().equals(email)) {
-//            throw new AccessDeniedException("Unauthorized");
-//        }
-//
-//        cloudinaryService.deleteImage(image.getUrl());
-//        adventure.getImages().remove(image);
-//        imageRepository.delete(image);
-//    }
-
     @Override
     @Transactional
     public void deleteImage(Long adventureId, String imageUrl, String email) {
@@ -198,7 +176,7 @@ public class AdventureServiceImpl implements AdventureService {
                 if (image.getUrl().equals(imageUrl)) {
                     System.out.println("Found image to delete");
                     cloudinaryService.deleteImage(image.getUrl());
-                    iterator.remove(); // THIS is key - removes from list
+                    iterator.remove();
                     break;
                 }
             }
@@ -238,16 +216,6 @@ public class AdventureServiceImpl implements AdventureService {
         return this.toDTO(adventure);
     }
     
-//    @Override
-//    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String name) {
-//        User user = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//
-//        Pageable pageable = PageRequest.of(page, size);
-//        Page<Adventure> result = adventureRepository.findByUser(user, pageable);
-//
-//        return result.stream().map(this::toDTO).collect(Collectors.toList());
-//    }
     @Override
     public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String location) {
         User user = userRepository.findByEmail(email)
@@ -292,26 +260,6 @@ public class AdventureServiceImpl implements AdventureService {
         }
     }
 
-//    private AdventureDTO toDTO(Adventure adventure) {
-//        return AdventureDTO.builder()
-//                .id(adventure.getId())
-//                .name(adventure.getName())
-//                .location(adventure.getLocation())
-//                .latitude(adventure.getGeoPoint().getY())
-//                .longitude(adventure.getGeoPoint().getX())
-//                .tags(adventure.getTags())
-//                .rating(adventure.getRating())
-//                .description(adventure.getDescription())
-//                .link(adventure.getLink())
-//                .imageUrls(
-//                        adventure.getImages().stream()
-//                                .map(AdventureImage::getUrl)
-//                                .collect(Collectors.toList())
-//                )
-//                .build();
-//    }
-//    
-
     private AdventureDTO toDTO(Adventure adventure) {
         return AdventureDTO.builder()
                 .id(adventure.getId())
@@ -319,8 +267,6 @@ public class AdventureServiceImpl implements AdventureService {
                 .location(adventure.getLocation())
                 .latitude(adventure.getLatitude())
                 .longitude(adventure.getLongitude())
-//                .latitude(adventure.getGeoPoint().getY())
-//                .longitude(adventure.getGeoPoint().getX())
                 .tags(adventure.getTags())
                 .rating(adventure.getRating())
                 .description(adventure.getDescription())
@@ -335,8 +281,6 @@ public class AdventureServiceImpl implements AdventureService {
 				        .updatedAt(adventure.getUpdatedAt())
                 .build();
     }
-
-    //
 
 	@Override
 	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search) {

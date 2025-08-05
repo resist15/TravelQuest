@@ -78,20 +78,7 @@ public class AdventureController {
         List<AdventureDTO> list = adventureService.getAdventuresByUser(auth.getName(),unassignedOnly);
         return ResponseEntity.ok(list);
     }
-    
-// old method for my
-//    @GetMapping("/my")
-//    public ResponseEntity<List<AdventureDTO>> getMyAdventures(
-//            @RequestParam(defaultValue = "0") int page,
-//            @RequestParam(defaultValue = "6") int size,
-//            @RequestParam(required = false) String name,
-//            Authentication auth) {
-//        List<AdventureDTO> adventures = adventureService.getAdventuresByUserPaginated(
-//            auth.getName(), page, size, name
-//        );
-//        return ResponseEntity.ok(adventures);
-//    }
-//    
+     
     @GetMapping("/{id}")
     public ResponseEntity<AdventureDTO> getAdventureById(@PathVariable Long id,Authentication auth) throws ResourceNotFoundException {
         return ResponseEntity.ok(adventureService.getAdventureByIdAndEmail(id,auth.getName()));
