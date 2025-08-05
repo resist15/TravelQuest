@@ -16,6 +16,11 @@ import { Separator } from "@/components/ui/separator";
 import { Plane, Globe2, Star } from "lucide-react"; // Import Star icon
 import { AdventureDTO } from "@/types/AdventureDTO";
 
+interface MapTilerFeature {
+  place_type: string[];
+  text: string;
+}
+
 export default function MapPage() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -84,7 +89,7 @@ export default function MapPage() {
         markerInstancesRef.current = [];
       }
     };
-  }, [adventures, mapRef.current]);
+  }, [adventures]);
 
   useEffect(() => {
     const getUniqueCountriesAndAverageRating = async () => {
@@ -103,17 +108,17 @@ export default function MapPage() {
             `https://api.maptiler.com/geocoding/${adv.longitude},${adv.latitude}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
           );
           const data = await res.json();
-          const countryFeature = data.features?.find((feature: any) =>
-            feature.place_type?.includes("country")
+          const countryFeature = data.features?.find((feature: MapTilerFeature) =>
+            feature.place_type.includes("country")
           );
           if (countryFeature && countryFeature.text) {
             countrySet.add(countryFeature.text);
           } else {
-            const highLevelPlace = data.features?.find((feature: any) =>
-              ['country', 'region', 'place'].some(type => feature.place_type?.includes(type))
+            const highLevelPlace = data.features?.find((feature: MapTilerFeature) =>
+              ['country', 'region', 'place'].some(type => feature.place_type.includes(type))
             );
             if (highLevelPlace && highLevelPlace.text) {
-                countrySet.add(highLevelPlace.text);
+              countrySet.add(highLevelPlace.text);
             }
           }
         } catch (error) {

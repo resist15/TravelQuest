@@ -4,22 +4,36 @@ import {
   isImageFitCover,
   useLightboxProps,
   useLightboxState,
+  RenderSlideProps,
+  RenderThumbnailProps,
+  Slide,
 } from "yet-another-react-lightbox";
 
-function isNextJsImage(slide: any) {
-  return isImageSlide(slide) && typeof slide.width === "number" && typeof slide.height === "number";
+// Define slide with additional fields for better type safety
+interface CustomSlide extends Slide {
+  width: number;
+  height: number;
+  blurDataURL?: string;
 }
 
-export default function NextJsImage({ slide, offset, rect }: any) {
+function isNextJsImage(slide: Slide): slide is CustomSlide {
+  return (
+    isImageSlide(slide) &&
+    typeof slide.width === "number" &&
+    typeof slide.height === "number"
+  );
+}
+
+export function NextJsImage({ slide, offset, rect }: RenderSlideProps) {
   const {
     on: { click },
     carousel: { imageFit },
   } = useLightboxProps();
   const { currentIndex } = useLightboxState();
 
-  const cover = isImageSlide(slide) && isImageFitCover(slide, imageFit);
+  if (!isNextJsImage(slide)) return null;
 
-  if (!isNextJsImage(slide)) return undefined;
+  const cover = isImageFitCover(slide, imageFit);
 
   const width = !cover
     ? Math.round(Math.min(rect.width, (rect.height / slide.height) * slide.width))
@@ -38,12 +52,33 @@ export default function NextJsImage({ slide, offset, rect }: any) {
         loading="eager"
         draggable={false}
         placeholder={slide.blurDataURL ? "blur" : undefined}
+        blurDataURL={slide.blurDataURL}
         style={{
           objectFit: cover ? "cover" : "contain",
           cursor: click ? "pointer" : undefined,
         }}
         sizes={`${Math.ceil((width / window.innerWidth) * 100)}vw`}
         onClick={offset === 0 ? () => click?.({ index: currentIndex }) : undefined}
+      />
+    </div>
+  );
+}
+
+export function NextJsThumbnail({ slide }: RenderThumbnailProps) {
+  if (!slide || typeof slide !== "object" || !("src" in slide)) return null;
+
+  const src = (slide as Slide).src;
+  const blurDataURL = isNextJsImage(slide) ? slide.blurDataURL : undefined;
+
+  return (
+    <div style={{ position: "relative", width: 100, height: 70 }}>
+      <Image
+        src={src}
+        alt=""
+        fill
+        style={{ objectFit: "cover" }}
+        placeholder={blurDataURL ? "blur" : undefined}
+        blurDataURL={blurDataURL}
       />
     </div>
   );

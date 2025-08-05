@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { AdventureDTO } from "@/types/AdventureDTO";
@@ -14,19 +14,12 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [filteredAdventures, setFilteredAdventures] = useState<AdventureDTO[]>([]);
   const router = useRouter();
-  const [recentLocations, setRecentLocations] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchAdventures = async () => {
       try {
         const res = await axios.get<AdventureDTO[]>("/api/adventures");
         setAdventures(res.data);
-
-        const recent = res.data
-          .slice()
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 3);
-
       } catch (err) {
         console.error("Failed to fetch adventures", err);
       }
@@ -83,7 +76,7 @@ export default function CalendarPage() {
             />
             <div className="p-4">
               <h3 className="text-lg font-medium">{adv.name}</h3>
-              <p className="text-muted-foreground text-sm">🌎 {recentLocations[adv.id] || adv.location}</p>
+              <p className="text-muted-foreground text-sm">🌎 {adv.location}</p>
               <p className="text-xs text-gray-500 mt-1">{format(new Date(adv.createdAt), "PPP")}</p>
             </div>
           </motion.div>

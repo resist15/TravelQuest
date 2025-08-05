@@ -1,9 +1,8 @@
 "use client";
 
 import { AdventureDTO } from "@/types/AdventureDTO";
-import { Star, StarOff } from "lucide-react";
+import { Star } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
 
 type AdventureCardProps = {
   adventure: AdventureDTO;

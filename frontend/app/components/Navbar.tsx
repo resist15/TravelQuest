@@ -3,7 +3,6 @@ import {
   AtSign,
   Compass,
   Layers,
-  Globe,
   Map,
   Calendar,
   Menu,

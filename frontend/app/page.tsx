@@ -1,8 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Navbar from "./components/Navbar";
-import { Badge } from "@/components/ui/badge";
 import {
   Plane,
   Flag,
@@ -10,12 +7,6 @@ import {
   Building2,
   PlusCircle,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,9 +14,9 @@ import { AdventureDTO } from "@/types/AdventureDTO";
 import Link from "next/link";
 import AdventureCard from "@/components/AdventureCard";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { DashboardStatsDTO } from "@/types/DashboardStatsDTO";
 import { toast } from "react-toastify";
+import { isAxiosError } from "axios";
 export default function Home() {
   const router = useRouter();
   const [userName, setUserName] = useState<string>('User');
@@ -59,9 +50,14 @@ export default function Home() {
         setAdventures(advRes.data || []);
         setUserName(userRes.data.name || 'User');
         setStats(statsRes.data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
-        if (err.response?.status === 401) router.push('/login');
+        let msg = "Failed fetching adventures";
+        if (isAxiosError(err)) {
+          if (err.response?.status === 401) router.push('/login');
+          msg = err.response?.data?.message || msg;
+          toast.error(msg)
+        }
         toast.error("Failed to fetch dashboard data")
       } finally {
         setLoading(false);
