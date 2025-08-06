@@ -19,8 +19,11 @@ function Earth() {
 
 export default function ThreeGlobeBackground() {
   return (
-    <div className="absolute inset-0 z-0">
-      <Canvas camera={{ position: [0, 0, 7], fov: 45 }}>
+    <div className="fixed inset-0 z-0 w-screen h-screen">
+      <Canvas
+        camera={{ position: [0, 0, 7], fov: 45 }}
+        className="!w-full !h-full" // Important: Force full canvas size
+      >
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={1} />
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade />
@@ -32,3 +35,4 @@ export default function ThreeGlobeBackground() {
     </div>
   );
 }
+

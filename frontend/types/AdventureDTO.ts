@@ -6,6 +6,7 @@ export interface AdventureDTO {
   description: string;
   rating: number;
   link: string;
+  publicVisibility: boolean;
   latitude: number;
   longitude: number;
   imageUrls: string[];

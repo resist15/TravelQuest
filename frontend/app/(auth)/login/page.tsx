@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="relative w-full h-screen overflow-hidden">
       <ThreeGlobeBackground />
       
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-0" />
+<div className="fixed inset-0 w-screen h-screen bg-black/40 backdrop-blur-sm z-10" />
 
       <div className="relative z-10 flex items-center justify-center h-full px-4">
         

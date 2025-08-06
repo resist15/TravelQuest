@@ -8,6 +8,7 @@ import {
   Menu,
   X,
   LogOut,
+  BookCopy,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -55,11 +56,12 @@ export default function Navbar() {
   }, [router]);
 
   const navLinks = [
+    { href: "/feed", icon: <BookCopy className="w-4 h-4"/>, label: "Feed" },
     { href: "/adventures", icon: <Compass className="w-4 h-4" />, label: "Adventures" },
     { href: "/collections", icon: <Layers className="w-4 h-4" />, label: "Collections" },
     { href: "/map", icon: <Map className="w-4 h-4" />, label: "Map" },
     { href: "/calendar", icon: <Calendar className="w-4 h-4" />, label: "Calendar" },
-    { href: "/aboutus", icon: <AtSign className="w-4 h-4" />, label: "About Us" },
+    { href: "/aboutus", icon: <AtSign className="w-4 h-4" />, label: "About Us" }
   ];
 
   const handleLogout = () => {
