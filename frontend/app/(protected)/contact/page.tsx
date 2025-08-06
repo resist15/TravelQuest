@@ -7,7 +7,7 @@ export default function ContactPage() {
     <main className="max-w-3xl mx-auto px-6 py-12">
       <h1 className="text-3xl font-bold mb-4">Contact Us</h1>
       <p className="text-lg mb-6">
-        We'd love to hear from you! Whether it's feedback, questions, or just a hello — reach out to us.
+        We&apos;d love to hear from you! Whether it&apos;s feedback, questions, or just a hello — reach out to us.
       </p>
 
       <ul className="space-y-4 text-lg">
