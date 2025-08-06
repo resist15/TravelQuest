@@ -41,6 +41,8 @@ import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import { NextJsImage, NextJsThumbnail } from "@/components/NextJsImage";
 import dynamic from "next/dynamic";
 import { isAxiosError } from "axios";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function AdventureDetails() {
   const Lightbox = dynamic(() => import("yet-another-react-lightbox"), { ssr: false });
@@ -336,6 +338,7 @@ export default function AdventureDetails() {
           >
             <MapPin className="w-4 h-4" /> Google Maps
           </Button>
+
           <Button
             variant="secondary"
             onClick={() => (editing ? handleSaveAdventureDetails() : setEditing(true))}
@@ -371,7 +374,31 @@ export default function AdventureDetails() {
         <p className="text-muted-foreground flex items-center gap-2">
           <MapPin className="w-4 h-4" /> {adventure.location}
         </p>
+
         <div className="flex items-center gap-1">
+          <div className="pe-3">
+            {!editing && (
+              <Badge
+                variant={adventure.publicVisibility ? "default" : "secondary"}
+                // className=""
+                className={adventure.publicVisibility ? "text-sm font-medium px3 py-1 rounded-full bg-blue-500 text-white dark:bg-blue-600" : "text-sm font-medium px3 py-1 rounded-full"}
+              >
+                {adventure.publicVisibility ? "Public" : "Private"}
+              </Badge>
+            )}
+          </div>
+          {editing && (
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="public-visibility"
+                checked={formState?.publicVisibility || false}
+                onCheckedChange={(checked) => setFormState(prev => ({ ...prev!, publicVisibility: checked }))}
+              />
+              <Label htmlFor="public-visibility" className="text-sm font-medium leading-none pe-4">
+                Publicly Visible
+              </Label>
+            </div>
+          )}
           {Array.from({ length: 5 }).map((_, i) => (
             <motion.div
               key={i}
@@ -389,6 +416,7 @@ export default function AdventureDetails() {
               />
             </motion.div>
           ))}
+
         </div>
       </div>
 
@@ -450,6 +478,7 @@ export default function AdventureDetails() {
                 </motion.div>
               ))}
             </AnimatePresence>
+
           </div>
         )}
       </div>
