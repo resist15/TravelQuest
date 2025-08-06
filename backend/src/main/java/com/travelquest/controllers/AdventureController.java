@@ -114,4 +114,10 @@ public class AdventureController {
         List<AdventureDTO> sorted = adventureService.getAdventuresSorted(auth.getName(), sortBy, order, page, size, searchTerm);
         return ResponseEntity.ok(sorted);
     }
+    
+    @GetMapping("/feed")
+    public ResponseEntity<List<AdventureDTO>> getPublicAdventures(Authentication auth){
+    	List<AdventureDTO> publicAdventures = adventureService.getPublicAdventures();
+    	return ResponseEntity.ok(publicAdventures);
+    }
 }

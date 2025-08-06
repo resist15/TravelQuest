@@ -16,6 +16,7 @@ public class AdventureDTO {
     private String description;
     private double rating;
     private String link;
+    private boolean publicVisibility;
     private double latitude;
     private double longitude;
     private List<String> imageUrls;
