@@ -44,7 +44,7 @@ public class Adventure {
     private String link;
     private double latitude;
     private double longitude;
-    
+    private boolean publicVisibility;
     @ElementCollection
     private List<String> tags;
 

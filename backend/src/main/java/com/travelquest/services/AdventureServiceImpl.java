@@ -73,6 +73,7 @@ public class AdventureServiceImpl implements AdventureService {
                 .tags(dto.getTags())
                 .description(dto.getDescription())
                 .link(dto.getLink())
+                .publicVisibility(dto.isPublicVisibility())
                 .rating(dto.getRating())
                 .latitude(dto.getLatitude())
                 .longitude(dto.getLongitude())
@@ -106,6 +107,7 @@ public class AdventureServiceImpl implements AdventureService {
         adventure.setLocation(resolvedLocation);
         adventure.setTags(dto.getTags());
         adventure.setDescription(dto.getDescription());
+        adventure.setPublicVisibility(dto.isPublicVisibility());
         adventure.setLink(dto.getLink());
         adventure.setRating(dto.getRating());
         adventure.setUpdatedAt(LocalDateTime.now());
@@ -268,6 +270,7 @@ public class AdventureServiceImpl implements AdventureService {
                 .latitude(adventure.getLatitude())
                 .longitude(adventure.getLongitude())
                 .tags(adventure.getTags())
+                .publicVisibility(adventure.isPublicVisibility())
                 .rating(adventure.getRating())
                 .description(adventure.getDescription())
                 .link(adventure.getLink())
@@ -395,6 +398,12 @@ public class AdventureServiceImpl implements AdventureService {
 	    }
 
 	    return result;
+	}
+
+	@Override
+	public List<AdventureDTO> getPublicAdventures() {
+	    List<Adventure> adventures = adventureRepository.findByPublicVisibility(true);
+		return adventures.stream().map(this::toDTO).collect(Collectors.toList());
 	}
 
 }
