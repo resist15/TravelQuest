@@ -19,4 +19,5 @@ public interface AdventureRepository extends JpaRepository<Adventure, Long> {
     List<Adventure> findByUserAndCollectionIsNull(User user);
     List<Adventure> findAllByCollectionId(Long collectionId);
     List<Adventure> findByPublicVisibility(boolean publicVisibility);
+    Adventure findByPublicVisibilityAndId(boolean publicVisibility,Long id);
 }

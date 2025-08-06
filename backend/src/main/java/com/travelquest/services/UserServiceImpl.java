@@ -46,12 +46,20 @@ public class UserServiceImpl implements UserService {
         return mapToResponse(user);
     }
 
-    private UserResponseDTO mapToResponse(User user) {
+    public static UserResponseDTO mapToResponse(User user) {
         UserResponseDTO dto = new UserResponseDTO();
         dto.setId(user.getId());
         dto.setName(user.getName());
         dto.setEmail(user.getEmail());
         dto.setProfilePicture(user.getProfilePicture());
         return dto;
+    }
+    
+    @Override
+    @Transactional
+    public void deleteUser(String email) {
+    	User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    	userRepository.delete(user);
     }
 }

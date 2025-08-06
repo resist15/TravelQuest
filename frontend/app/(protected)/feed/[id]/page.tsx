@@ -36,7 +36,7 @@ export default function AdventureDetails() {
   useEffect(() => {
     const fetchAdventure = async () => {
       try {
-        const res = await axios.get(`/api/adventures/${id}`);
+        const res = await axios.get(`/api/adventures/feed/${id}`);
         setAdventure(res.data);
         setBrokenImageUrls(new Set());
         setCoordinates([res.data.longitude,res.data.latitude]);

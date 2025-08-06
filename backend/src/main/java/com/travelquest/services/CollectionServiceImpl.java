@@ -1,7 +1,6 @@
 package com.travelquest.services;
 
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -136,7 +136,7 @@ public class CollectionServiceImpl implements CollectionService {
 
         return collectionRepository.findAll().stream()
                 .filter(c -> c.getUser().getId().equals(user.getId()))
-                .map(this::toDTO)
+                .map(CollectionServiceImpl::toDTO)
                 .collect(Collectors.toList());
     }
 
@@ -166,7 +166,7 @@ public class CollectionServiceImpl implements CollectionService {
             pageResult = collectionRepository.findByUser(user, pageable);
         }
 
-        return pageResult.stream().map(this::toDTO).collect(Collectors.toList());
+        return pageResult.stream().map(CollectionServiceImpl::toDTO).collect(Collectors.toList());
     }
 
 
@@ -217,7 +217,7 @@ public class CollectionServiceImpl implements CollectionService {
         }
     }
     
-    private CollectionDTO toDTO(Collection collection) {
+    public static CollectionDTO toDTO(Collection collection) {
         return CollectionDTO.builder()
                 .id(collection.getId())
                 .name(collection.getName())

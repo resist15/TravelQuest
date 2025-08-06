@@ -23,4 +23,9 @@ public class CustomUserDetailsService implements UserDetailsService {
             .roles(user.getRole().name())
             .build();
     }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
 }

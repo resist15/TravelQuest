@@ -33,11 +33,13 @@ import com.travelquest.dto.AdventureDTO;
 import com.travelquest.dto.DashboardStatsDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
+import com.travelquest.entity.Collection;
 import com.travelquest.entity.DashboardStats;
 import com.travelquest.entity.User;
 import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.repositories.AdventureImageRepository;
 import com.travelquest.repositories.AdventureRepository;
+import com.travelquest.repositories.CollectionRepository;
 import com.travelquest.repositories.UserRepository;
 
 import jakarta.transaction.Transactional;
@@ -51,13 +53,13 @@ public class AdventureServiceImpl implements AdventureService {
     private final UserRepository userRepository;
     private final AdventureImageRepository imageRepository;
     private final CloudinaryService cloudinaryService;
-
+    private final CollectionRepository collectionRepository;
     @Autowired
     private ObjectMapper objectMapper;
 
     @Value("${maptiler.api.key}")
     private String maptilerApiKey;
-
+ 
     @Override
     @Transactional
     public AdventureDTO createAdventure(String email, AdventureDTO dto, List<MultipartFile> images) {
@@ -193,17 +195,21 @@ public class AdventureServiceImpl implements AdventureService {
     			.orElseThrow(() -> new RuntimeException("User not found"));
     	if(unassignedOnly) {
             return adventureRepository.findByUserAndCollectionIsNull(user).stream()
-                    .map(this::toDTO)
+                    .map(AdventureServiceImpl::toDTO)
                     .collect(Collectors.toList());
     	}
         return adventureRepository.findByUser(user).stream()
-                .map(this::toDTO)
+                .map(AdventureServiceImpl::toDTO)
                 .collect(Collectors.toList());
     }
     
     @Override
-    public List<AdventureDTO> getAdventuresByCollectionId(Long id){
-    	return adventureRepository.findAllByCollectionId(id).stream().map(this::toDTO).collect(Collectors.toList());
+    public List<AdventureDTO> getAdventuresByCollectionId(Long id,String email){
+    	Collection collection = collectionRepository.findById(id).orElseThrow(()-> new RuntimeException("Collection not found"));
+    	if(!collection.getUser().getEmail().equals(email)){
+    		throw new RuntimeException("Access Denied");
+    	}
+    	return adventureRepository.findAllByCollectionId(id).stream().map(AdventureServiceImpl::toDTO).collect(Collectors.toList());
     }
     
     @Override
@@ -232,7 +238,7 @@ public class AdventureServiceImpl implements AdventureService {
             result = adventureRepository.findByUser(user, pageable);
         }
 
-        return result.stream().map(this::toDTO).collect(Collectors.toList());
+        return result.stream().map(AdventureServiceImpl::toDTO).collect(Collectors.toList());
     }
     
     @Override
@@ -262,7 +268,7 @@ public class AdventureServiceImpl implements AdventureService {
         }
     }
 
-    private AdventureDTO toDTO(Adventure adventure) {
+    public static AdventureDTO toDTO(Adventure adventure) {
         return AdventureDTO.builder()
                 .id(adventure.getId())
                 .name(adventure.getName())
@@ -274,6 +280,10 @@ public class AdventureServiceImpl implements AdventureService {
                 .rating(adventure.getRating())
                 .description(adventure.getDescription())
                 .link(adventure.getLink())
+                .collectionId(
+                        adventure.getCollection() != null
+                            ? adventure.getCollection().getId()
+                            : null)
                 .imageUrls(
                     Objects.requireNonNullElse(adventure.getImages(), List.<AdventureImage>of())
                            .stream()
@@ -306,7 +316,7 @@ public class AdventureServiceImpl implements AdventureService {
         }
 		return result
 				.stream()
-				.map(this::toDTO)
+				.map(AdventureServiceImpl::toDTO)
 				.collect(Collectors.toList());
 	}
 	
@@ -403,7 +413,12 @@ public class AdventureServiceImpl implements AdventureService {
 	@Override
 	public List<AdventureDTO> getPublicAdventures() {
 	    List<Adventure> adventures = adventureRepository.findByPublicVisibility(true);
-		return adventures.stream().map(this::toDTO).collect(Collectors.toList());
+		return adventures.stream().map(AdventureServiceImpl::toDTO).collect(Collectors.toList());
 	}
-
+	
+	@Override
+	public AdventureDTO getPublicAdventure(Long id) {
+		Adventure adventure = adventureRepository.findByPublicVisibilityAndId(true,id);
+		return toDTO(adventure);
+	}
 }

@@ -1,5 +1,7 @@
 package com.travelquest.dto;
 
+import com.travelquest.enums.Role;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

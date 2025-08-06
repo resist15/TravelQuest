@@ -6,4 +6,5 @@ import com.travelquest.dto.UserResponseDTO;
 public interface UserService {
     UserResponseDTO registerUser(UserRequestDTO userDto);
     UserResponseDTO getUserByEmail(String email);
+    public void deleteUser(String email);
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.travelquest.dto.AuthenticationRequest;
 import com.travelquest.dto.AuthenticationResponse;
+import com.travelquest.enums.Role;
 import com.travelquest.services.CustomUserDetailsService;
 import com.travelquest.utils.JwtUtil;
 
@@ -28,9 +29,10 @@ public class AuthenticationController {
         var authToken = new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
         authManager.authenticate(authToken);
 
-        var userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-        String jwt = jwtUtil.generateToken(userDetails.getUsername());
+        var user = userDetailsService.getUserByEmail(request.getEmail());
+        String jwt = jwtUtil.generateToken(user.getEmail(), user.getRole());
 
         return new AuthenticationResponse(jwt);
     }
+
 }

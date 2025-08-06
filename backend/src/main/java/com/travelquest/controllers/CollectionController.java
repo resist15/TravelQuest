@@ -81,7 +81,7 @@ public class CollectionController {
     
     @GetMapping("/{id}/adventures")
     public ResponseEntity<List<AdventureDTO>> getAdventuresByCollection(@PathVariable Long id, Authentication auth) throws AccessDeniedException {
-        return ResponseEntity.ok(adventureService.getAdventuresByCollectionId(id));
+        return ResponseEntity.ok(adventureService.getAdventuresByCollectionId(id,auth.getName()));
     }
     
     @PostMapping("/{collectionId}/adventures/{adventureId}")

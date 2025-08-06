@@ -7,8 +7,14 @@ import { Button } from "@/components/ui/button";
 import axios from "@/lib/axios";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import { jwtDecode } from "jwt-decode";
 import ThreeGlobeBackground from "@/app/components/ThreeGlobeBackground";
-
+interface DecodedToken {
+  sub: string;
+  email: string;
+  role: "USER" | "ADMIN";
+  exp: number;
+}
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +26,9 @@ export default function LoginPage() {
     try {
       const res = await axios.post("/api/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
+      const decoded = jwtDecode<DecodedToken>(res.data.token);
+      localStorage.setItem("role", decoded.role);
+      console.log(localStorage.getItem("role"))
       toast.success("Login successful!");
       router.push("/");
     } catch (err) {
