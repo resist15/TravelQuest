@@ -1,5 +1,7 @@
 package com.travelquest.services;
 
+import java.time.LocalDateTime;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -51,6 +53,7 @@ public class UserServiceImpl implements UserService {
         dto.setId(user.getId());
         dto.setName(user.getName());
         dto.setEmail(user.getEmail());
+        dto.setJoinedAt(LocalDateTime.now());
         dto.setProfilePicture(user.getProfilePicture());
         return dto;
     }

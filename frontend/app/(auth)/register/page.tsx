@@ -69,7 +69,7 @@ export default function RegisterPage() {
           )}
 
           <div>
-            <Label htmlFor="name" className="text-white">
+            <Label htmlFor="name" className="text-white pb-2">
               Name
             </Label>
             <Input
@@ -83,7 +83,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <Label htmlFor="email" className="text-white">
+            <Label htmlFor="email" className="text-white pb-2">
               Email
             </Label>
             <Input
@@ -98,7 +98,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <Label htmlFor="password" className="text-white">
+            <Label htmlFor="password" className="text-white pb-2">
               Password
             </Label>
             <Input

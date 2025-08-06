@@ -103,12 +103,23 @@ export default function Navbar() {
 
         <div className="flex items-center gap-3">
           <ModeToggle />
-          <motion.div whileHover={{ scale: 1.1 }}>
+          {/* <motion.div whileHover={{ scale: 1.1 }}>
             <Avatar>
               <AvatarImage src="/avatar.png" alt="user" />
               <AvatarFallback>{userName[0]}</AvatarFallback>
             </Avatar>
-          </motion.div>
+          </motion.div> */}
+
+          <Link href="/userdetails">
+  <motion.div whileHover={{ scale: 1.1 }} className="cursor-pointer">
+    <Avatar>
+      <AvatarImage src="/avatar.png" alt="user" />
+      <AvatarFallback>{userName[0]}</AvatarFallback>
+    </Avatar>
+  </motion.div>
+</Link>
+
+
           <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
             <LogOut className="w-5 h-5" />
           </Button>
