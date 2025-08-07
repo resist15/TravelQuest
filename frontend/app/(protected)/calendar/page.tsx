@@ -90,11 +90,30 @@ export default function CalendarPage() {
           mode="single"
           selected={selectedDate}
           onSelect={setSelectedDate}
-          className="rounded-xl border p-4 sm:p-6 w-full"
+          className="hidden lg:block rounded-xl border p-4 sm:p-6 w-full"
           classNames={{
             table: "w-full table-fixed",
             head_cell: "text-sm font-semibold text-center",
             day: "h-10 w-10 sm:h-21 sm:w-21 m-2 md:h-full md:w-full flex items-center justify-center rounded-md text-sm hover:bg-muted/50 transition",
+          }}
+          modifiers={{
+            hasAdventure: (date) => markedDates.has(format(date, "yyyy-MM-dd")),
+          }}
+          modifiersClassNames={{
+            hasAdventure: "bg-green-300 text-black font-bold ring-2 ring-green-600"
+          }}
+        />
+
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={setSelectedDate}
+          className="lg:hidden rounded-xl border p-4 sm:p-6 w-full"
+          classNames={{
+            table: "w-full",
+            head_cell: "text-sm font-semibold text-center",
+            day: "h-10 w-10 md:h-12 md:w-12 p-1 flex items-center justify-center rounded-md text-sm hover:bg-muted/50 transition-colors",
+            cell: "p-0",
           }}
           modifiers={{
             hasAdventure: (date) => markedDates.has(format(date, "yyyy-MM-dd")),
@@ -134,7 +153,7 @@ export default function CalendarPage() {
                     <div className="p-3">
                       <h4 className="text-base font-medium">{adv.name}</h4>
                       <p className="text-sm text-muted-foreground">  🌎 {adv.location}
-</p>
+                      </p>
                     </div>
                   </motion.div>
                 ))}

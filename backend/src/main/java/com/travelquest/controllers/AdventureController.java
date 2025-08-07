@@ -120,4 +120,10 @@ public class AdventureController {
     	List<AdventureDTO> publicAdventures = adventureService.getPublicAdventures();
     	return ResponseEntity.ok(publicAdventures);
     }
+
+    @GetMapping("/feed/{id}")
+    public ResponseEntity<AdventureDTO> getPublicAdventures(@PathVariable Long id){
+    	AdventureDTO publicAdventures = adventureService.getPublicAdventure(id);
+    	return ResponseEntity.ok(publicAdventures);
+    }
 }
