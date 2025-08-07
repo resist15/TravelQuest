@@ -24,6 +24,7 @@ export default function NewAdventurePage() {
   const [tagsInput, setTagsInput] = useState("");
   const [rating, setRating] = useState(0);
   const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -77,11 +78,12 @@ export default function NewAdventurePage() {
       toast.error("Please fill in all required fields.");
       return;
     }
+    setSubmitting(true);
 
     const tags = tagsInput
       .split(",")
       .map((tag) => tag.trim())
-      .filter((tag) => /^[a-zA-Z0-9]+$/.test(tag)); 
+      .filter((tag) => /^[a-zA-Z0-9]+$/.test(tag));
     if (tags.length === 0) {
       toast.error("Please provide valid alphanumeric tags (no spaces or symbols).");
       return;
@@ -112,6 +114,8 @@ export default function NewAdventurePage() {
     } catch (err) {
       console.error(err);
       toast.error("Error adding adventure.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -185,8 +189,8 @@ export default function NewAdventurePage() {
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Submit Adventure
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? "Submitting..." : "Submit Adventure"}
         </Button>
       </form>
     </div>

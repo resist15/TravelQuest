@@ -62,6 +62,10 @@ export default function AdventureDetails() {
   const [imageToDelete, setImageToDelete] = useState<string | null>(null);
   const [showImageDeleteDialog, setShowImageDeleteDialog] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     const fetchAdventure = async () => {
       try {
@@ -91,7 +95,9 @@ export default function AdventureDetails() {
 
   const compressImage = async (file: File): Promise<File> => {
     const maxSizeInBytes = 5 * 1024 * 1024; // 5 MB
-
+    if (file.size <= maxSizeInBytes) {
+      return file;
+    }
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
@@ -190,6 +196,9 @@ export default function AdventureDetails() {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
+    setIsSavingDetails(true); // Start loading state
+    const toastId = toast.loading("Saving adventure details...");
+
     const currentState = {
       ...formState,
       tags: formState.tags?.slice(0, 4) || [],
@@ -206,15 +215,30 @@ export default function AdventureDetails() {
       setAdventure(res.data);
       setFormState(res.data);
       setEditing(false);
-      toast.success("Adventure details saved successfully!");
+      toast.update(toastId, {
+        render: "Adventure details saved successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 5000,
+      });
     } catch (error) {
       console.error("Update adventure details failed", error);
-      toast.error("Failed to save adventure details.");
+      toast.update(toastId, {
+        render: "Failed to save adventure details.",
+        type: "error",
+        isLoading: false,
+        autoClose: 5000,
+      });
+    } finally {
+      setIsSavingDetails(false); // End loading state
     }
   };
 
   const handleUploadNewImages = async () => {
     if (!photosToUpload.length || !adventure?.id) return;
+
+    setIsUploadingImages(true); // Start loading state
+    const toastId = toast.loading("Uploading images...");
 
     const formData = new FormData();
     photosToUpload.forEach(photo => formData.append("images", photo));
@@ -230,11 +254,23 @@ export default function AdventureDetails() {
 
       setPhotosToUpload([]);
       setUploadingPhotos(false);
-      toast.success("Images uploaded successfully!");
+      toast.update(toastId, {
+        render: "Images uploaded successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 5000,
+      });
       setBrokenImageUrls(new Set());
     } catch (error) {
       console.error("Image upload failed", error);
-      toast.error("Failed to upload images.");
+      toast.update(toastId, {
+        render: "Failed to upload images.",
+        type: "error",
+        isLoading: false,
+        autoClose: 5000,
+      });
+    } finally {
+      setIsUploadingImages(false); // End loading state
     }
   };
 
@@ -273,15 +309,29 @@ export default function AdventureDetails() {
   const handleDelete = async () => {
     if (!adventure?.id) return;
 
+    setIsDeleting(true); // Start loading state
+    const toastId = toast.loading("Deleting adventure...");
+
     try {
       await axios.delete(`/api/adventures/${adventure.id}`);
-      toast.success("Adventure deleted successfully!");
+      toast.update(toastId, {
+        render: "Adventure deleted successfully!",
+        type: "success",
+        isLoading: false,
+        autoClose: 5000,
+      });
       window.location.href = "/adventures";
     } catch (error) {
       console.error("Failed to delete adventure:", error);
-      toast.error("Failed to delete adventure.");
+      toast.update(toastId, {
+        render: "Failed to delete adventure.",
+        type: "error",
+        isLoading: false,
+        autoClose: 5000,
+      });
     } finally {
       setShowDeleteDialog(false);
+      setIsDeleting(false); // End loading state
     }
   };
 
@@ -361,8 +411,9 @@ export default function AdventureDetails() {
                     setIsSheetOpen(false); // Close sheet after saving
                   }}
                   className="w-full gap-2"
+                  disabled={isSavingDetails}
                 >
-                  <Save className="w-4 h-4" /> Save Details
+                  {isSavingDetails ? "Saving..." : "Save Details"}
                 </Button>
               ) : (
                 <Button
@@ -415,9 +466,10 @@ export default function AdventureDetails() {
             variant="destructive"
             onClick={() => setShowDeleteDialog(true)}
             className="gap-1"
+            disabled={isDeleting}
           >
             <Trash2 className="w-4 h-4" />
-            Delete Adventure
+            {isDeleting ? "Deleting..." : "Delete Adventure"}
           </Button>
           <Button
             variant="outline"
@@ -435,9 +487,10 @@ export default function AdventureDetails() {
             variant="secondary"
             onClick={() => (editing ? handleSaveAdventureDetails() : setEditing(true))}
             className="gap-1"
+            disabled={isSavingDetails}
           >
             {editing ? <Save className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-            {editing ? "Save Details" : "Edit Details"}
+            {editing ? (isSavingDetails ? "Saving..." : "Save Details") : "Edit Details"}
           </Button>
           <Button
             variant="default"
@@ -622,10 +675,10 @@ export default function AdventureDetails() {
             <div className="flex gap-2">
               <Button
                 onClick={handleUploadNewImages}
-                disabled={photosToUpload.length === 0}
+                disabled={photosToUpload.length === 0 || isUploadingImages}
                 className="gap-2"
               >
-                <UploadCloud className="w-4 h-4" /> Upload Selected Images
+                <UploadCloud className="w-4 h-4" /> {isUploadingImages ? "Uploading..." : "Upload Selected Images"}
               </Button>
               <Button
                 variant="outline"
@@ -712,7 +765,9 @@ export default function AdventureDetails() {
               <Button variant="outline">Cancel</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+              <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
