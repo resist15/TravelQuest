@@ -21,7 +21,6 @@ import {
   AlertDialogAction,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,19 +33,17 @@ import { AdventureDTO } from "@/types/AdventureDTO";
 import { toast } from "react-toastify";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
-
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
-
 import { NextJsImage, NextJsThumbnail } from "@/components/NextJsImage";
 import dynamic from "next/dynamic";
 import { isAxiosError } from "axios";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import pica from "pica";
 
 export default function AdventureDetails() {
   const Lightbox = dynamic(() => import("yet-another-react-lightbox"), { ssr: false });
-
   const { id } = useParams();
   const [adventure, setAdventure] = useState<AdventureDTO | null>(null);
   const [formState, setFormState] = useState<AdventureDTO | null>(null);
@@ -60,8 +57,7 @@ export default function AdventureDetails() {
   const [tagsInput, setTagsInput] = useState<string>("");
   const [brokenImageUrls, setBrokenImageUrls] = useState<Set<string>>(new Set());
   const tagsInputRef = useRef<HTMLInputElement>(null);
-
-  // New state for image deletion
+  const picaInstance = pica();
   const [imageToDelete, setImageToDelete] = useState<string | null>(null);
   const [showImageDeleteDialog, setShowImageDeleteDialog] = useState(false);
 
@@ -76,7 +72,7 @@ export default function AdventureDetails() {
         let msg = "Failed fetching adventures";
         if (isAxiosError(err)) {
           msg = err.response?.data?.message || msg;
-          toast.error(msg)
+          toast.error(msg);
         }
         setError(true);
       } finally {
@@ -91,6 +87,33 @@ export default function AdventureDetails() {
       tagsInputRef.current.focus();
     }
   }, [editing]);
+
+  const compressImage = async (file: File): Promise<File> => {
+    const maxSizeInBytes = 5 * 1024 * 1024; // 5 MB
+
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        picaInstance.resize(img, canvas)
+          .then((result: HTMLCanvasElement) => {
+            result.toBlob(blob => {
+              if (!blob || blob.size > maxSizeInBytes) {
+                reject(new Error("Image is still too large after compression."));
+              } else {
+                resolve(new File([blob], file.name, { type: file.type }));
+              }
+            }, file.type, 0.8);
+          })
+          .catch(reject);
+      };
+      img.onerror = () => reject(new Error("Failed to load image for compression."));
+      img.src = URL.createObjectURL(file);
+    });
+  };
 
   const commitTag = useCallback(() => {
     const tagToCommit = tagsInput.trim().replace(/[^a-zA-Z0-9 ]/g, "");
@@ -216,7 +239,6 @@ export default function AdventureDetails() {
 
   const handleImageError = useCallback((url: string) => {
     setBrokenImageUrls(prev => new Set(prev).add(url));
-    // toast.error(`Image failed to load: ${url.substring(0, 50)}...`);
   }, []);
 
   const validAdventureImageUrls = (adventure?.imageUrls || []).filter(
@@ -266,9 +288,7 @@ export default function AdventureDetails() {
     if (!imageToDelete || !adventure?.id) return;
 
     try {
-      // await axios.delete(`/api/adventures/${adventure.id}/${imageToDelete}`);
       await axios.delete(`/api/adventures/image/${adventure.id}?imageUrl=${encodeURIComponent(imageToDelete)}`);
-
       const updatedAdventureRes = await axios.get(`/api/adventures/${adventure.id}`);
       setAdventure(updatedAdventureRes.data);
       setFormState(updatedAdventureRes.data);
@@ -325,7 +345,6 @@ export default function AdventureDetails() {
             <Trash2 className="w-4 h-4" />
             Delete Adventure
           </Button>
-
           <Button
             variant="outline"
             onClick={() =>
@@ -338,7 +357,6 @@ export default function AdventureDetails() {
           >
             <MapPin className="w-4 h-4" /> Google Maps
           </Button>
-
           <Button
             variant="secondary"
             onClick={() => (editing ? handleSaveAdventureDetails() : setEditing(true))}
@@ -356,7 +374,6 @@ export default function AdventureDetails() {
           </Button>
         </div>
       </div>
-
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -369,18 +386,15 @@ export default function AdventureDetails() {
           isEditable={editing}
         />
       </motion.div>
-
       <div className="flex justify-between items-center mt-4">
         <p className="text-muted-foreground flex items-center gap-2">
           <MapPin className="w-4 h-4" /> {adventure.location}
         </p>
-
         <div className="flex items-center gap-1">
           <div className="pe-3">
             {!editing && (
               <Badge
                 variant={adventure.publicVisibility ? "default" : "secondary"}
-                // className=""
                 className={adventure.publicVisibility ? "text-sm font-medium px3 py-1 rounded-full bg-blue-500 text-white dark:bg-blue-600" : "text-sm font-medium px3 py-1 rounded-full"}
               >
                 {adventure.publicVisibility ? "Public" : "Private"}
@@ -416,10 +430,8 @@ export default function AdventureDetails() {
               />
             </motion.div>
           ))}
-
         </div>
       </div>
-
       <div>
         <h2 className="text-lg font-semibold mb-2">Tags</h2>
         {editing ? (
@@ -478,11 +490,9 @@ export default function AdventureDetails() {
                 </motion.div>
               ))}
             </AnimatePresence>
-
           </div>
         )}
       </div>
-
       <div className="py-4">
         <h2 className="text-lg font-semibold mb-2">Description</h2>
         {editing ? (
@@ -498,7 +508,6 @@ export default function AdventureDetails() {
           <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{adventure.description}</p>
         )}
       </div>
-
       <AnimatePresence>
         {uploadingPhotos && (
           <motion.div
@@ -513,9 +522,26 @@ export default function AdventureDetails() {
               type="file"
               multiple
               accept="image/*"
-              onChange={e => {
+              onChange={async (e) => {
                 if (e.target.files) {
-                  setPhotosToUpload(Array.from(e.target.files));
+                  const filesToProcess = Array.from(e.target.files);
+                  const compressedFiles: File[] = [];
+                  await Promise.all(
+                    filesToProcess.map(async (file) => {
+                      try {
+                        const compressedFile = await compressImage(file);
+                        compressedFiles.push(compressedFile);
+                        toast.info(`Image "${file.name}" compressed successfully.`);
+                      } catch (error) {
+                        if (error instanceof Error) {
+                          toast.error(`Could not compress "${file.name}": ${error.message}`);
+                        } else {
+                          toast.error(`An unknown error occurred while compressing "${file.name}".`);
+                        }
+                      }
+                    })
+                  );
+                  setPhotosToUpload(compressedFiles);
                 }
               }}
             />
@@ -540,7 +566,6 @@ export default function AdventureDetails() {
           </motion.div>
         )}
       </AnimatePresence>
-
       <div className="py-4">
         <h2 className="text-lg font-semibold mb-2">Gallery</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -554,7 +579,6 @@ export default function AdventureDetails() {
                 transition={{ duration: 0.2 }}
               >
                 <Card
-                  // Changed onClick to only open lightbox if not in editing mode
                   onClick={() => !editing && setSelectedIndex(idx)}
                   className="cursor-pointer overflow-hidden aspect-video relative group"
                 >
@@ -574,7 +598,7 @@ export default function AdventureDetails() {
                           size="icon"
                           className="h-8 w-8 rounded-full"
                           onClick={(e) => {
-                            e.stopPropagation(); // Prevent opening lightbox
+                            e.stopPropagation();
                             setImageToDelete(src);
                             setShowImageDeleteDialog(true);
                           }}
@@ -603,8 +627,6 @@ export default function AdventureDetails() {
         render={{ slide: NextJsImage, thumbnail: NextJsThumbnail }}
         plugins={[Zoom, Thumbnails]}
       />
-
-
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="w-[90%] max-w-md rounded-lg p-6">
           <AlertDialogHeader>
@@ -621,8 +643,6 @@ export default function AdventureDetails() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* New AlertDialog for image deletion confirmation */}
       <AlertDialog open={showImageDeleteDialog} onOpenChange={setShowImageDeleteDialog}>
         <AlertDialogContent className="w-[90%] max-w-md rounded-lg p-6">
           <AlertDialogHeader>
