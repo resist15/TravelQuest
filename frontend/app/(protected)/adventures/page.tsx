@@ -99,7 +99,7 @@ export default function AdventuresPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <SidebarFilter searchTerm={searchTerm} onSearchChange={handleSearchChange} />
+                <SidebarFilter searchTerm={searchTerm} onSearchChange={handleSearchChange} onApplyFilters={handleApplyFilters}/>
               </motion.div>
             </DrawerContent>
           </Drawer>

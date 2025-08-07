@@ -68,13 +68,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="px-6 py-4 max-w-7xl mx-auto">
-        <h1 className="text-4xl font-semibold mb-2">Welcome back, {userName}!</h1>
+<main className="px-4 sm:px-6 py-4 max-w-7xl mx-auto">
+<h1 className="text-4xl sm:text-5xl font-semibold mb-2">Welcome back, {userName}!</h1>
         <p className="text-muted-foreground mt-1 mb-8">
           Your gateway to memories, moments, and mapped milestones.
         </p>
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-muted rounded-xl p-4 flex flex-col justify-center">
             <p className="text-3xl font-bold text-pink-500">{stats?.totalAdventures}</p>
             <div className="flex items-center gap-2 text-base mt-1">

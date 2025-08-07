@@ -33,8 +33,8 @@ const team = [
     {
         name: "Geeta Pujari",
         role: "Core-Member",
-        bio: "",
-        image: "https://ui-avatars.com/api/?name=Geeta+Pujari",
+        bio: "Once a spark, now a story.",
+        image: "./avatars/geeta.webp",
     },
 ];
 

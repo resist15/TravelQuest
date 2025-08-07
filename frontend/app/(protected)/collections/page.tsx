@@ -181,14 +181,14 @@ export default function CollectionsPage() {
                 </Button>
             </motion.div>
 
-            {/* Floating button for mobile */}
+            {/* Floating Create Button for Mobile */}
             <motion.div
                 className="fixed bottom-4 right-4 z-50 lg:hidden"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 300 }}
             >
-
+                <CreateCollectionDialog onSuccess={fetchCollections} />
             </motion.div>
         </div>
     );

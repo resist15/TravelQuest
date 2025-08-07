@@ -39,7 +39,7 @@ export default function AdventureDetails() {
         const res = await axios.get(`/api/adventures/${id}`);
         setAdventure(res.data);
         setBrokenImageUrls(new Set());
-        setCoordinates([res.data.longitude,res.data.latitude]);
+        setCoordinates([res.data.longitude, res.data.latitude]);
       } catch (err: unknown) {
         let msg = "Failed fetching adventure";
         if (isAxiosError(err)) {
@@ -82,7 +82,7 @@ export default function AdventureDetails() {
             Created at: {format(new Date(adventure.createdAt), "dd MMM yyyy, hh:mm a")}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 justify-end">
+        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
           <Button
             variant="outline"
             onClick={() =>
@@ -104,7 +104,7 @@ export default function AdventureDetails() {
         transition={{ delay: 0.1, duration: 0.5 }}
         className="w-full rounded-lg overflow-hidden shadow-md"
       >
-    {coordinates && <AdventureMap coordinates={coordinates} />}
+        {coordinates && <AdventureMap coordinates={coordinates} />}
 
       </motion.div>
 

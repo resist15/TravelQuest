@@ -41,6 +41,7 @@ import { isAxiosError } from "axios";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import pica from "pica";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export default function AdventureDetails() {
   const Lightbox = dynamic(() => import("yet-another-react-lightbox"), { ssr: false });
@@ -60,7 +61,7 @@ export default function AdventureDetails() {
   const picaInstance = pica();
   const [imageToDelete, setImageToDelete] = useState<string | null>(null);
   const [showImageDeleteDialog, setShowImageDeleteDialog] = useState(false);
-
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   useEffect(() => {
     const fetchAdventure = async () => {
       try {
@@ -336,7 +337,80 @@ export default function AdventureDetails() {
             Created at: {format(new Date(adventure.createdAt), "dd MMM yyyy, hh:mm a")}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 justify-end">
+
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetTrigger asChild>
+            <Button onClick={() => setIsSheetOpen(true)} className="gap-2 sm:hidden">
+              <Pencil className="w-4 h-4" />
+              Actions
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="sm:max-w-md px-7">
+            <SheetHeader>
+              <SheetTitle>Adventure Actions</SheetTitle>
+              <SheetDescription>
+                Manage your adventure details and photos.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex flex-col gap-4 py-4">
+              {editing ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    handleSaveAdventureDetails();
+                    setIsSheetOpen(false); // Close sheet after saving
+                  }}
+                  className="w-full gap-2"
+                >
+                  <Save className="w-4 h-4" /> Save Details
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setEditing(true);
+                    setIsSheetOpen(false);
+                  }}
+                  className="w-full gap-2"
+                >
+                  <Pencil className="w-4 h-4" /> Edit Details
+                </Button>
+              )}
+              <Button
+                variant="default"
+                onClick={() => {
+                  setUploadingPhotos(prev => !prev)
+                  setIsSheetOpen(false);
+                }
+                }
+                className="w-full gap-2"
+              >
+                <UploadCloud className="w-4 h-4" /> Upload Images
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  window.open(
+                    `http://maps.google.com/?q=${adventure.latitude},${adventure.longitude}`,
+                    "_blank"
+                  )
+                }
+                className="w-full gap-2"
+              >
+                <MapPin className="w-4 h-4" /> View on Google Maps
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+                className="w-full gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Delete Adventure
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        <div className="hidden sm:flex flex-wrap gap-2 justify-end">
           <Button
             variant="destructive"
             onClick={() => setShowDeleteDialog(true)}

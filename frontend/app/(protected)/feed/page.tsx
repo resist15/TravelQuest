@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { CalendarDays, MapPin } from "lucide-react"
 import Link from "next/link"
 import { Loader2 } from "lucide-react"
-import {motion} from "framer-motion";
+import { motion } from "framer-motion";
 
 export default function AdventureFeedsPage() {
     const [adventures, setAdventures] = useState<AdventureDTO[]>([])
@@ -71,13 +71,15 @@ export default function AdventureFeedsPage() {
                             >
 
                                 <Card key={adventure.id} className="flex flex-col overflow-hidden pt-0 hover:shadow-xl transition-shadow">
-                                    {adventure.imageUrls.length > 0 && (
-                                        <img
-                                            src={adventure.imageUrls[0]}
-                                            alt={adventure.name}
-                                            className="h-48 w-full object-cover rounded-t-xl transition-transform duration-300 hover:scale-105"
-                                        />
-                                    )}
+                                    <img
+                                        src={
+                                            adventure.imageUrls.length > 0 && adventure.imageUrls[0]
+                                                ? adventure.imageUrls[0]
+                                                : "/adventure_place.webp"
+                                        }
+                                        alt={adventure.name}
+                                        className="h-48 w-full object-cover rounded-t-xl transition-transform duration-300 hover:scale-105"
+                                    />
 
                                     <CardHeader>
                                         <CardTitle className="text-xl font-semibold">
