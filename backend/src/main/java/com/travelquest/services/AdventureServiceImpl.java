@@ -55,9 +55,7 @@ public class AdventureServiceImpl implements AdventureService {
     private final AdventureImageRepository imageRepository;
     private final CloudinaryService cloudinaryService;
     private final CollectionRepository collectionRepository;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     @Value("${maptiler.api.key}")
     private String maptilerApiKey;
