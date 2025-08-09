@@ -10,13 +10,21 @@ interface AdventureMapProps {
   isEditable?: boolean;
 }
 
+interface MapTilerFeature {
+  id: string;
+  place_name: string;
+  geometry: {
+    coordinates: [number, number];
+  };
+}
+
 export default function AdventureMap({ coordinates, onMapClick, isEditable }: AdventureMapProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<MapTilerFeature[]>([]);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -42,7 +50,7 @@ export default function AdventureMap({ coordinates, onMapClick, isEditable }: Ad
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, []);
+  }, [coordinates]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -90,7 +98,7 @@ export default function AdventureMap({ coordinates, onMapClick, isEditable }: Ad
           `https://api.maptiler.com/geocoding/${encodeURIComponent(searchTerm)}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
         );
         const data = await res.json();
-        setResults(data.features || []);
+        setResults((data.features || []) as MapTilerFeature[]);
       } catch (error) {
         console.error("Geocoding error:", error);
       }

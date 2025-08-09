@@ -12,6 +12,13 @@ import { useRouter } from "next/navigation";
 import axios from "@/lib/axios";
 import clsx from "clsx";
 
+interface SearchResult {
+  id: string;
+  place_name?: string;
+  text?: string;
+  geometry: { coordinates: [number, number] };
+}
+
 export default function NewAdventurePage() {
   const router = useRouter();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -26,7 +33,7 @@ export default function NewAdventurePage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -91,7 +98,7 @@ export default function NewAdventurePage() {
     }
   };
 
-  const selectSearchResult = (place: any) => {
+  const selectSearchResult = (place: SearchResult) => {
     const [lng, lat] = place.geometry.coordinates;
     setSelectedLocation([lng, lat]);
     setSearchQuery(place.place_name || place.text || "");
@@ -114,8 +121,10 @@ export default function NewAdventurePage() {
       .split(",")
       .map((tag) => tag.trim())
       .filter((tag) => /^[a-zA-Z0-9]+$/.test(tag));
+
     if (tags.length === 0) {
       toast.error("Please provide valid alphanumeric tags (no spaces or symbols).");
+      setSubmitting(false);
       return;
     }
 
