@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +24,9 @@ export default function NewAdventurePage() {
   const [rating, setRating] = useState(0);
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -72,6 +74,34 @@ export default function NewAdventurePage() {
     );
   };
 
+  const handleSearchChange = async (value: string) => {
+    setSearchQuery(value);
+    if (value.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(value)}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+      );
+      const data = await res.json();
+      setSearchResults(data.features || []);
+    } catch (error) {
+      console.error("Search error:", error);
+    }
+  };
+
+  const selectSearchResult = (place: any) => {
+    const [lng, lat] = place.geometry.coordinates;
+    setSelectedLocation([lng, lat]);
+    setSearchQuery(place.place_name || place.text || "");
+    setSearchResults([]);
+    if (mapRef.current) {
+      mapRef.current.flyTo({ center: [lng, lat], zoom: 12 });
+      placeMarker([lng, lat], mapRef.current);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !tagsInput || !selectedLocation) {
@@ -93,8 +123,7 @@ export default function NewAdventurePage() {
     const payload = {
       name,
       description,
-      link: "", // intentionally left empty
-
+      link: "",
       location: `${lat},${lng}`,
       latitude: lat,
       longitude: lng,
@@ -124,25 +153,18 @@ export default function NewAdventurePage() {
       <h1 className="text-3xl font-bold">Add New Adventure</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Name*"
-          required
-        />
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name*" required />
 
         <Input
           value={tagsInput}
           onChange={(e) => {
             const input = e.target.value;
-            // Allow only letters, numbers, commas — no spaces, emojis, or special chars
             const sanitized = input.replace(/[^a-zA-Z0-9,]/g, "");
             setTagsInput(sanitized);
           }}
           placeholder="Tags (comma separated, alphanumeric only)*"
           required
         />
-
 
         {/* Rating */}
         <div className="flex items-center gap-1">
@@ -165,28 +187,41 @@ export default function NewAdventurePage() {
           rows={4}
         />
 
+        {/* Search Box */}
+        <div className="relative">
+          <Input
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search for a location..."
+          />
+          {searchResults.length > 0 && (
+            <ul className="absolute z-10 bg-background border rounded mt-1 w-full max-h-60 overflow-y-auto shadow-lg">
+              {searchResults.map((place) => (
+                <li
+                  key={place.id}
+                  onClick={() => selectSearchResult(place)}
+                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                >
+                  {place.place_name || place.text}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         {/* Location Map */}
         <div className="space-y-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleUseCurrentLocation}
-            className="w-full"
-          >
+          <Button type="button" variant="outline" onClick={handleUseCurrentLocation} className="w-full">
             Use My Current Location 📍
           </Button>
 
           {selectedLocation && (
             <p className="text-sm text-muted-foreground text-center">
-              Latitude: {selectedLocation[1].toFixed(4)}, Longitude:{" "}
-              {selectedLocation[0].toFixed(4)}
+              Latitude: {selectedLocation[1].toFixed(4)}, Longitude: {selectedLocation[0].toFixed(4)}
             </p>
           )}
 
-          <div
-            ref={mapContainerRef}
-            className="w-full h-64 rounded border border-muted"
-          />
+          <div ref={mapContainerRef} className="w-full h-64 rounded border border-muted" />
         </div>
 
         <Button type="submit" className="w-full" disabled={submitting}>
