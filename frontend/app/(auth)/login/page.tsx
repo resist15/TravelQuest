@@ -145,7 +145,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 text-sm text-gray-300 text-center space-x-2">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 text-sm text-gray-300 text-center space-x-2">
           <span className="font-medium">
             <span className="font-bold">2025 &copy; TravelQuest</span>
           </span>
