@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import axios from "@/lib/axios";
 import { toast } from "react-toastify";
-import { isAxiosError } from "axios"; // still import this from base axios
+import { isAxiosError } from "axios";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,9 +29,34 @@ export default function RegisterPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      name: (document.getElementById("name") as HTMLInputElement)?.value || prev.name,
+      email: (document.getElementById("email") as HTMLInputElement)?.value || prev.email,
+      password: (document.getElementById("password") as HTMLInputElement)?.value || prev.password,
+    }));
+  }, []);
+
+  const validatePassword = (password: string) => {
+    const errors = [];
+    if (password.length < 8) errors.push("at least 8 characters");
+    if (!/[A-Z]/.test(password)) errors.push("an uppercase letter");
+    if (!/[0-9]/.test(password)) errors.push("a number");
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push("a special character");
+    return errors;
+  };
+
   const handleRegister = async () => {
-    setLoading(true);
     setError("");
+
+    const passErrors = validatePassword(form.password);
+    if (passErrors.length > 0) {
+      setError(`Password must contain ${passErrors.join(", ")}`);
+      return;
+    }
+
+    setLoading(true);
     try {
       await axios.post("/api/users/register", form);
       router.push("/login");
@@ -51,7 +76,7 @@ export default function RegisterPage() {
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <ThreeGlobeBackground />
-<div className="fixed inset-0 w-screen h-screen bg-black/40 backdrop-blur-sm z-10" />
+      <div className="fixed inset-0 w-screen h-screen bg-black/40 backdrop-blur-sm z-10" />
 
       <div className="relative z-10 flex items-center justify-center h-full px-4">
         <motion.div
@@ -80,6 +105,7 @@ export default function RegisterPage() {
               name="name"
               value={form.name}
               onChange={handleChange}
+              onInput={handleChange}
               disabled={loading}
               className="bg-white/10 text-white placeholder:text-gray-300"
             />
@@ -95,6 +121,7 @@ export default function RegisterPage() {
               type="email"
               value={form.email}
               onChange={handleChange}
+              onInput={handleChange}
               disabled={loading}
               className="bg-white/10 text-white placeholder:text-gray-300"
             />
@@ -110,26 +137,17 @@ export default function RegisterPage() {
               type="password"
               value={form.password}
               onChange={handleChange}
+              onInput={handleChange}
               disabled={loading}
               className="bg-white/10 text-white placeholder:text-gray-300"
             />
           </div>
 
-          {/* <div>
-            <Label htmlFor="profilePicture" className="text-white">
-              Profile Picture URL (optional)
-            </Label>
-            <Input
-              id="profilePicture"
-              name="profilePicture"
-              value={form.profilePicture}
-              onChange={handleChange}
-              disabled={loading}
-              className="bg-white/10 text-white placeholder:text-gray-300"
-            />
-          </div> */}
-
-          <Button className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold" onClick={handleRegister} disabled={loading}>
+          <Button
+            className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold"
+            onClick={handleRegister}
+            disabled={loading}
+          >
             {loading ? "Registering..." : "Register"}
           </Button>
 
@@ -150,7 +168,6 @@ export default function RegisterPage() {
           • Made with ❤️ at <span className="font-bold">CDAC</span>
         </span>
       </div>
-
     </div>
   );
 }
