@@ -1,5 +1,7 @@
 package com.travelquest.controllers;
 
+import java.util.Map;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,8 +31,26 @@ public class AuthenticationController {
         authManager.authenticate(authToken);
 
         var userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-        String jwt = jwtUtil.generateToken(userDetails.getUsername());
-
-        return new AuthenticationResponse(jwt);
+        String accessToken = jwtUtil.generateAccessToken(userDetails.getUsername());
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
+        return new AuthenticationResponse(accessToken,refreshToken);
     }
+    
+    @PostMapping("/refresh")
+    public AuthenticationResponse refresh(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+
+        if (refreshToken == null || !jwtUtil.validateToken(refreshToken)) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+
+        String username = jwtUtil.extractUsername(refreshToken);
+        var userDetails = userDetailsService.loadUserByUsername(username);
+
+        String newAccessToken = jwtUtil.generateAccessToken(userDetails.getUsername());
+        String newRefreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
+
+        return new AuthenticationResponse(newAccessToken, newRefreshToken);
+    }
+
 }
