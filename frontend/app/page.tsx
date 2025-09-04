@@ -45,7 +45,7 @@ export default function Home() {
               size: 3,
             }
           }),
-          api.get('/api/adventures/dashboard')
+          api.get('/api/dashboard')
         ]);
         setAdventures(advRes.data || []);
         setUserName(userRes.data.name || 'User');
