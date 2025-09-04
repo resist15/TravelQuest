@@ -1,25 +1,17 @@
 package com.travelquest.services;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-//import org.locationtech.jts.geom.Coordinate;
-//import org.locationtech.jts.geom.GeometryFactory;
-//import org.locationtech.jts.geom.Point;
+import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.DashboardStatsDTO;
+import com.travelquest.entity.Adventure;
+import com.travelquest.entity.AdventureImage;
+import com.travelquest.entity.DashboardStats;
+import com.travelquest.entity.User;
+import com.travelquest.exceptions.ResourceNotFoundException;
+import com.travelquest.repositories.AdventureRepository;
+import com.travelquest.repositories.UserRepository;
+import com.travelquest.utils.map.MapUtils;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,49 +20,26 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.travelquest.dto.AdventureDTO;
-import com.travelquest.dto.DashboardStatsDTO;
-import com.travelquest.entity.Adventure;
-import com.travelquest.entity.AdventureImage;
-import com.travelquest.entity.Collection;
-import com.travelquest.entity.DashboardStats;
-import com.travelquest.entity.User;
-import com.travelquest.exceptions.ResourceNotFoundException;
-import com.travelquest.repositories.AdventureImageRepository;
-import com.travelquest.repositories.AdventureRepository;
-import com.travelquest.repositories.CollectionRepository;
-import com.travelquest.repositories.UserRepository;
-
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AdventureServiceImpl implements AdventureService {
 
     private final AdventureRepository adventureRepository;
+    private final AdventureImageService adventureImageService;
     private final UserRepository userRepository;
-    private final AdventureImageRepository imageRepository;
-    private final CloudinaryService cloudinaryService;
-    private final CollectionRepository collectionRepository;
-    private final ObjectMapper objectMapper;
-
-    @Value("${maptiler.api.key}")
-    private String maptilerApiKey;
-//    private final GeometryFactory geometryFactory = new GeometryFactory();
+    private final MapUtils mapUtils;
 
     @Override
     @Transactional
-    public AdventureDTO createAdventure(String email, AdventureDTO dto, List<MultipartFile> images) {
+    public AdventureDTO createAdventure(String email, AdventureDTO dto, List<MultipartFile> images) throws ResourceNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-//        Point geoPoint = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
-//        geoPoint.setSRID(4326);
-        
-        Map<String, String> geoData = reverseGeocode(dto.getLatitude(), dto.getLongitude());
+        Map<String, String> geoData = mapUtils.reverseGeocode(dto.getLatitude(), dto.getLongitude());
         String resolvedLocation = geoData.getOrDefault("region", "Unknown");
         
         Adventure adventure = Adventure.builder()
@@ -83,27 +52,30 @@ public class AdventureServiceImpl implements AdventureService {
                 .rating(dto.getRating())
                 .latitude(dto.getLatitude())
                 .longitude(dto.getLongitude())
-//                .geoPoint(geoPoint)
                 .user(user)
                 .build();
 
         Adventure savedAdventure = adventureRepository.save(adventure);
 
-        uploadImages(images, user.getId(), savedAdventure);
+        adventureImageService.uploadImages(images, user.getId(), savedAdventure);
         updateUserStats(user);
         return toDTO(savedAdventure);
     }
 
     @Override
     @Transactional
-    public AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages,String email) {
+    public AdventureDTO updateAdventure(Long id, AdventureDTO dto, List<MultipartFile> newImages,String email) throws ResourceNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Adventure adventure = adventureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Adventure not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Adventure not found"));
 
-        Map<String, String> geoData = reverseGeocode(dto.getLatitude(), dto.getLongitude());
+        if (!adventure.getUser().getEmail().equals(email)) {
+            throw new AccessDeniedException("Unauthorized");
+        }
+
+        Map<String, String> geoData = mapUtils.reverseGeocode(dto.getLatitude(), dto.getLongitude());
         String resolvedLocation = geoData.getOrDefault("region", "Unknown");
         
         adventure.setName(dto.getName());
@@ -117,12 +89,8 @@ public class AdventureServiceImpl implements AdventureService {
         adventure.setLatitude(dto.getLatitude());
         adventure.setLongitude(dto.getLongitude());
 
-//        Point point = geometryFactory.createPoint(new Coordinate(dto.getLongitude(), dto.getLatitude()));
-//        point.setSRID(4326);
-//        adventure.setGeoPoint(point);
-
         if (newImages != null && !newImages.isEmpty()) {
-            uploadImages(newImages, adventure.getUser().getId(), adventure);
+            adventureImageService.uploadImages(newImages, adventure.getUser().getId(), adventure);
         }
 
         Adventure updated = adventureRepository.save(adventure);
@@ -132,12 +100,12 @@ public class AdventureServiceImpl implements AdventureService {
 
     @Override
     @Transactional
-    public void deleteAdventure(Long adventureId, String email) {
+    public void deleteAdventure(Long adventureId, String email) throws ResourceNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Adventure adventure = adventureRepository.findById(adventureId)
-                .orElseThrow(() -> new RuntimeException("Adventure not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Adventure not found"));
 
         if (!adventure.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
@@ -146,9 +114,9 @@ public class AdventureServiceImpl implements AdventureService {
         List<AdventureImage> images = adventure.getImages();
         if (images != null && !images.isEmpty()) {
             for (AdventureImage image : images) {
-                cloudinaryService.deleteImage(image.getUrl());
+                adventureImageService.deleteImageFromCloud(image.getUrl());
             }
-            imageRepository.deleteAll(images);
+            adventureImageService.deleteAllImages(images);
         }
 
         adventureRepository.delete(adventure);
@@ -157,38 +125,22 @@ public class AdventureServiceImpl implements AdventureService {
 
     @Override
     @Transactional
-    public void addImages(Long adventureId, List<MultipartFile> images, String email) {
+    public void addImages(Long adventureId, List<MultipartFile> images, String email) throws ResourceNotFoundException {
         Adventure adventure = adventureRepository.findById(adventureId)
-                .orElseThrow(() -> new RuntimeException("Adventure not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Adventure not found"));
 
         if (!adventure.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
         }
 
-        uploadImages(images, adventure.getUser().getId(), adventure);
+        adventureImageService.uploadImages(images, adventure.getUser().getId(), adventure);
     }
-
-//    @Override
-//    @Transactional
-//    public void deleteImage(String imageId, String email) {
-//        AdventureImage image = imageRepository.findById(imageId)
-//                .orElseThrow(() -> new RuntimeException("Image not found"));
-//
-//        Adventure adventure = image.getAdventure();
-//        if (!adventure.getUser().getEmail().equals(email)) {
-//            throw new AccessDeniedException("Unauthorized");
-//        }
-//
-//        cloudinaryService.deleteImage(image.getUrl());
-//        adventure.getImages().remove(image);
-//        imageRepository.delete(image);
-//    }
 
     @Override
     @Transactional
-    public void deleteImage(Long adventureId, String imageUrl, String email) {
+    public void deleteImage(Long adventureId, String imageUrl, String email) throws ResourceNotFoundException {
         Adventure adventure = adventureRepository.findById(adventureId)
-                .orElseThrow(() -> new RuntimeException("Adventure not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Adventure not found"));
 
         if (!adventure.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
@@ -200,7 +152,7 @@ public class AdventureServiceImpl implements AdventureService {
                 AdventureImage image = iterator.next();
                 if (image.getUrl().equals(imageUrl)) {
                     System.out.println("Found image to delete");
-                    cloudinaryService.deleteImage(image.getUrl());
+                    adventureImageService.deleteImageFromCloud(image.getUrl());
                     iterator.remove(); // THIS is key - removes from list
                     break;
                 }
@@ -211,9 +163,9 @@ public class AdventureServiceImpl implements AdventureService {
     }
     
     @Override
-    public List<AdventureDTO> getAdventuresByUser(String email, boolean unassignedOnly) {
+    public List<AdventureDTO> getAdventuresByUser(String email, boolean unassignedOnly) throws ResourceNotFoundException {
     	User user = userRepository.findByEmail(email)
-    			.orElseThrow(() -> new RuntimeException("User not found"));
+    			.orElseThrow(() -> new ResourceNotFoundException("User not found"));
     	if(unassignedOnly) {
             return adventureRepository.findByUserAndCollectionIsNull(user).stream()
                     .map(this::toDTO)
@@ -223,20 +175,19 @@ public class AdventureServiceImpl implements AdventureService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
-    public List<AdventureDTO> getAdventuresByCollectionId(Long id,String email){
-    	Collection collection = collectionRepository.findById(id).orElseThrow(()-> new RuntimeException("Collection not found"));
-    	if(!collection.getUser().getEmail().equals(email)){
-    		throw new RuntimeException("Access Denied");
-    	}
-    	return adventureRepository.findAllByCollectionId(id).stream().map(this::toDTO).collect(Collectors.toList());
+    public List<AdventureDTO> getAdventuresByCollectionId(Long id, String email) {
+        return adventureRepository.findAllByCollectionIdAndCollectionUserEmail(id, email)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
-    
+
     @Override
     public AdventureDTO getAdventureByIdAndEmail(Long id, String email) throws ResourceNotFoundException {
         Adventure adventure = adventureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Adventure not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Adventure not found"));
 
         if (!adventure.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
@@ -245,80 +196,6 @@ public class AdventureServiceImpl implements AdventureService {
         return this.toDTO(adventure);
     }
     
-//    @Override
-//    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String name) {
-//        User user = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//
-//        Pageable pageable = PageRequest.of(page, size);
-//        Page<Adventure> result = adventureRepository.findByUser(user, pageable);
-//
-//        return result.stream().map(this::toDTO).collect(Collectors.toList());
-//    }
-    @Override
-    public List<AdventureDTO> getAdventuresByUserPaginated(String email, int page, int size, String location) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Adventure> result;
-
-        if (location != null && !location.trim().isEmpty()) {
-            result = adventureRepository.findByUserAndNameContainingIgnoreCase(user, location, pageable);
-        } else {
-            result = adventureRepository.findByUser(user, pageable);
-        }
-
-        return result.stream().map(this::toDTO).collect(Collectors.toList());
-    }
-    
-    @Override
-    public AdventureDTO getAdventureById(Long id) {
-        Adventure adventure = adventureRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Adventure not found"));
-
-        return toDTO(adventure);
-    }
-
-    private void uploadImages(List<MultipartFile> images, Long userId, Adventure adventure) {
-        if (images == null || images.isEmpty()) {
-            return; // No images to upload
-        }
-        for (MultipartFile image : images) {
-            try {
-                String url = cloudinaryService.uploadImage(image, userId.toString(), adventure.getId().toString());
-                AdventureImage img = AdventureImage.builder()
-                        .url(url)
-                        .adventure(adventure)
-                        .build();
-                imageRepository.save(img);
-                adventure.getImages().add(img);
-            } catch (IOException e) {
-                throw new RuntimeException("Image upload failed", e);
-            }
-        }
-    }
-
-//    private AdventureDTO toDTO(Adventure adventure) {
-//        return AdventureDTO.builder()
-//                .id(adventure.getId())
-//                .name(adventure.getName())
-//                .location(adventure.getLocation())
-//                .latitude(adventure.getGeoPoint().getY())
-//                .longitude(adventure.getGeoPoint().getX())
-//                .tags(adventure.getTags())
-//                .rating(adventure.getRating())
-//                .description(adventure.getDescription())
-//                .link(adventure.getLink())
-//                .imageUrls(
-//                        adventure.getImages().stream()
-//                                .map(AdventureImage::getUrl)
-//                                .collect(Collectors.toList())
-//                )
-//                .build();
-//    }
-//    
-
     private AdventureDTO toDTO(Adventure adventure) {
         return AdventureDTO.builder()
                 .id(adventure.getId())
@@ -326,8 +203,6 @@ public class AdventureServiceImpl implements AdventureService {
                 .location(adventure.getLocation())
                 .latitude(adventure.getLatitude())
                 .longitude(adventure.getLongitude())
-//                .latitude(adventure.getGeoPoint().getY())
-//                .longitude(adventure.getGeoPoint().getX())
                 .collectionId(
                         adventure.getCollection() != null
                             ? adventure.getCollection().getId()
@@ -348,12 +223,10 @@ public class AdventureServiceImpl implements AdventureService {
                 .build();
     }
 
-    //
-
 	@Override
-	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search) {
+	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search) throws ResourceNotFoundException {
 		User user = userRepository.findByEmail(email)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 		String sortField = switch (sortBy.toLowerCase()) {
 			case "name", "rating", "createdat", "updatedat" -> sortBy;
@@ -374,7 +247,8 @@ public class AdventureServiceImpl implements AdventureService {
 				.map(this::toDTO)
 				.collect(Collectors.toList());
 	}
-	
+
+    @Transactional
 	private void updateUserStats(User user) {
 	    List<Adventure> adventures = adventureRepository.findByUser(user);
 
@@ -383,7 +257,7 @@ public class AdventureServiceImpl implements AdventureService {
 	    Set<String> countries = new HashSet<>();
 
 	    for (Adventure adv : adventures) {
-	        Map<String, String> geo = reverseGeocode(adv.getLatitude(), adv.getLongitude());
+	        Map<String, String> geo = mapUtils.reverseGeocode(adv.getLatitude(), adv.getLongitude());
 
 	        if (geo.get("city") != null) cities.add(geo.get("city"));
 	        if (geo.get("region") != null) regions.add(geo.get("region"));
@@ -402,9 +276,9 @@ public class AdventureServiceImpl implements AdventureService {
 	}
 
 	@Override
-	public DashboardStatsDTO getAdventureStats(String email) {
+	public DashboardStatsDTO getAdventureStats(String email) throws ResourceNotFoundException {
 	    User user = userRepository.findByEmail(email)
-	            .orElseThrow(() -> new RuntimeException("User not found"));
+	            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 	    
 	    return DashboardStatsDTO.builder()
 	            .totalAdventures(user.getDashboardStats().getTotalAdventures())
@@ -412,57 +286,6 @@ public class AdventureServiceImpl implements AdventureService {
 	            .totalRegions(user.getDashboardStats().getTotalRegions())
 	            .totalCountries(user.getDashboardStats().getTotalCountries())
 	            .build();
-	}
-
-	private Map<String, String> reverseGeocode(double latitude, double longitude) {
-	    Map<String, String> result = new HashMap<>();
-	    result.put("city", null);
-	    result.put("region", null);
-	    result.put("country", null);
-
-	    try {
-	        String url = String.format(
-	            "https://api.maptiler.com/geocoding/%f,%f.json?key=%s&language=en",
-	            longitude, latitude, maptilerApiKey
-	        );
-
-	        HttpClient client = HttpClient.newHttpClient();
-	        HttpRequest request = HttpRequest.newBuilder()
-	                .uri(URI.create(url))
-	                .GET()
-	                .build();
-
-	        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-	        if (response.statusCode() != 200) {
-	            System.err.println("Non-200 response from MapTiler: " + response.body());
-	            return result;
-	        }
-
-	        JsonNode root = objectMapper.readTree(response.body());
-	        JsonNode features = root.get("features");
-
-	        if (features != null && features.isArray()) {
-	            for (JsonNode feature : features) {
-	                JsonNode placeTypes = feature.get("place_type");
-	                String name = feature.get("text").asText();
-
-	                for (JsonNode type : placeTypes) {
-	                    String typeValue = type.asText();
-	                    switch (typeValue) {
-	                    	case "place", "locality", "municipality", "localadmin" -> result.putIfAbsent("city", name);
-	                        case "region", "subregion" -> result.putIfAbsent("region", name);
-	                        case "country" -> result.putIfAbsent("country", name);
-	                    }
-	                }
-	            }
-	        }
-
-	    } catch (Exception e) {
-	        System.err.println("Reverse geocoding failed: " + e.getMessage());
-	    }
-
-	    return result;
 	}
 
 	@Override

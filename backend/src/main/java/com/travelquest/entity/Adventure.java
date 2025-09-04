@@ -48,9 +48,6 @@ public class Adventure {
     @ElementCollection
     private List<String> tags;
 
-//    @Column(columnDefinition = "geometry(Point,4326)")
-//    private Point geoPoint;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
@@ -58,7 +55,6 @@ public class Adventure {
     @OneToMany(mappedBy = "adventure", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AdventureImage> images = new ArrayList<>();
     
-    //
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -79,6 +75,4 @@ public class Adventure {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_id", nullable=true)
     private Collection collection;
-
-    //
 }

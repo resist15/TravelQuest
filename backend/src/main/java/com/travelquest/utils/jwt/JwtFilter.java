@@ -1,4 +1,4 @@
-package com.travelquest.utils;
+package com.travelquest.utils.jwt;
 
 import java.io.IOException;
 

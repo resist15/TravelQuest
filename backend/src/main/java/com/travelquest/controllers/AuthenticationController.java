@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.travelquest.dto.AuthenticationRequest;
 import com.travelquest.dto.AuthenticationResponse;
 import com.travelquest.services.CustomUserDetailsService;
-import com.travelquest.utils.JwtUtil;
+import com.travelquest.utils.jwt.JwtUtil;
 
 import lombok.RequiredArgsConstructor;
 
