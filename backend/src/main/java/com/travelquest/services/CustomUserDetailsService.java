@@ -2,6 +2,7 @@ package com.travelquest.services;
 
 import com.travelquest.entity.User;
 import com.travelquest.repositories.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;

@@ -1,23 +1,20 @@
 package com.travelquest.controllers;
 
-import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.util.List;
-
-import org.springframework.data.domain.Page;
+import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.CollectionDTO;
+import com.travelquest.exceptions.ResourceNotFoundException;
+import com.travelquest.services.AdventureService;
+import com.travelquest.services.CollectionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.travelquest.dto.AdventureDTO;
-import com.travelquest.dto.CollectionDTO;
-import com.travelquest.exceptions.ResourceNotFoundException;
-import com.travelquest.services.AdventureService;
-import com.travelquest.services.CollectionService;
-
-import lombok.RequiredArgsConstructor;
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/collections")
@@ -26,13 +23,7 @@ public class CollectionController {
 
     private final CollectionService collectionService;
     private final AdventureService adventureService;
-//    
-//    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<AdventureDTO> createAdventure(
-//            @RequestPart("data") AdventureDTO dto,
-//            @RequestPart(value = "images", required = false) List<MultipartFile> images,
-//            Authentication auth) {
-    
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CollectionDTO> createCollection(
     		@RequestPart("data") CollectionDTO dto,
@@ -47,12 +38,12 @@ public class CollectionController {
             @PathVariable Long id,
     		@RequestPart("data") CollectionDTO dto,
     		@RequestPart(value = "image", required = false) MultipartFile image,
-    		Authentication auth) throws IOException {
+    		Authentication auth) throws IOException, ResourceNotFoundException {
         return ResponseEntity.ok(collectionService.updateCollection(id, dto, image, auth.getName()));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCollection(@PathVariable Long id, Authentication auth) throws AccessDeniedException {
+    public ResponseEntity<Void> deleteCollection(@PathVariable Long id, Authentication auth) throws AccessDeniedException, ResourceNotFoundException {
         collectionService.deleteCollection(id, auth.getName());
         return ResponseEntity.noContent().build();
     }
@@ -62,19 +53,19 @@ public class CollectionController {
             @PathVariable Long collectionId,
             @PathVariable Long adventureId,
             Authentication auth
-    ) throws AccessDeniedException {
+    ) throws AccessDeniedException, ResourceNotFoundException {
         collectionService.removeAdventureFromCollection(collectionId, adventureId, auth.getName());
         return ResponseEntity.noContent().build();
     }
 
 
     @GetMapping
-    public ResponseEntity<List<CollectionDTO>> getAllCollections(Authentication auth) {
+    public ResponseEntity<List<CollectionDTO>> getAllCollections(Authentication auth) throws ResourceNotFoundException {
         return ResponseEntity.ok(collectionService.getCollectionsByUser(auth.getName()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CollectionDTO> getCollectionById(@PathVariable Long id, Authentication auth) throws AccessDeniedException {
+    public ResponseEntity<CollectionDTO> getCollectionById(@PathVariable Long id, Authentication auth) throws AccessDeniedException, ResourceNotFoundException {
         return ResponseEntity.ok(collectionService.getCollectionById(id, auth.getName()));
     }
     
@@ -88,7 +79,7 @@ public class CollectionController {
             @PathVariable Long collectionId,
             @PathVariable Long adventureId,
             Authentication auth
-    ) throws AccessDeniedException {
+    ) throws AccessDeniedException, ResourceNotFoundException {
         collectionService.addAdventureToCollection(collectionId, adventureId, auth.getName());
         return ResponseEntity.ok().build();
     }
@@ -99,10 +90,9 @@ public class CollectionController {
             @RequestParam(defaultValue = "6") int size,
             @RequestParam(required = false) String searchTerm,
             Authentication auth
-    ) {
+    ) throws ResourceNotFoundException {
         List<CollectionDTO> collections = collectionService.getCollectionsByUserPaginated(auth.getName(), page, size, searchTerm);
         return ResponseEntity.ok(collections);
     }
-
 
 }

@@ -38,17 +38,17 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         User saved = userRepository.save(user);
-        return mapToResponse(saved);
+        return toDTO(saved);
     }
 
     @Override
     public UserResponseDTO getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-        return mapToResponse(user);
+        return toDTO(user);
     }
 
-    private UserResponseDTO mapToResponse(User user) {
+    private UserResponseDTO toDTO(User user) {
         UserResponseDTO dto = new UserResponseDTO();
         dto.setId(user.getId());
         dto.setName(user.getName());

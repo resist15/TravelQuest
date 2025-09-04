@@ -1,19 +1,5 @@
 package com.travelquest.services;
 
-import java.io.IOException;
-import java.nio.file.AccessDeniedException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.travelquest.dto.AdventureDTO;
 import com.travelquest.dto.CollectionDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.Collection;
@@ -22,9 +8,19 @@ import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.repositories.AdventureRepository;
 import com.travelquest.repositories.CollectionRepository;
 import com.travelquest.repositories.UserRepository;
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.AccessDeniedException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,13 +35,13 @@ public class CollectionServiceImpl implements CollectionService {
     @Transactional
     public CollectionDTO createCollection(String email, CollectionDTO dto,MultipartFile image) throws ResourceNotFoundException, IOException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         List<Adventure> adventures = adventureRepository.findAllById(dto.getExistingAdventureIds());
         
         for (Long adventureId : dto.getExistingAdventureIds()) {
             Adventure adventure = adventureRepository.findById(adventureId)
-                .orElseThrow(() -> new RuntimeException("Adventure not found: " + adventureId));
+                .orElseThrow(() -> new ResourceNotFoundException("Adventure not found: " + adventureId));
             if (adventure.getCollection() != null) {
                 throw new ResourceNotFoundException("Adventure already belongs to a collection: " + adventureId);
             }
@@ -73,12 +69,12 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Override
     @Transactional
-    public CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws IOException {
+    public CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws IOException, ResourceNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         
         Collection collection = collectionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Collection not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Collection not found"));
 
         if (!collection.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
@@ -93,7 +89,7 @@ public class CollectionServiceImpl implements CollectionService {
         	url = cloudinaryService.uploadImage(image, user.getId().toString(), user.getId().toString());
         }
         
-        List<Long> advIds = new ArrayList<Long>();
+        List<Long> advIds = new ArrayList<>();
         for(Adventure adv: collection.getAdventures()) {
         	advIds.add(adv.getId());
         }
@@ -111,9 +107,9 @@ public class CollectionServiceImpl implements CollectionService {
 
     @Transactional
     @Override
-    public void deleteCollection(Long collectionId, String email) throws AccessDeniedException {
+    public void deleteCollection(Long collectionId, String email) throws AccessDeniedException, ResourceNotFoundException {
         Collection collection = collectionRepository.findById(collectionId)
-                .orElseThrow(() -> new RuntimeException("Collection not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Collection not found"));
 
         if (!collection.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
@@ -130,9 +126,9 @@ public class CollectionServiceImpl implements CollectionService {
 
 
     @Override
-    public List<CollectionDTO> getCollectionsByUser(String email) {
+    public List<CollectionDTO> getCollectionsByUser(String email) throws ResourceNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return collectionRepository.findAll().stream()
                 .filter(c -> c.getUser().getId().equals(user.getId()))
@@ -141,9 +137,9 @@ public class CollectionServiceImpl implements CollectionService {
     }
 
     @Override
-    public CollectionDTO getCollectionById(Long id, String email) throws AccessDeniedException {
+    public CollectionDTO getCollectionById(Long id, String email) throws AccessDeniedException, ResourceNotFoundException {
         Collection collection = collectionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Collection not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Collection not found"));
 
         if (!collection.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
@@ -153,9 +149,9 @@ public class CollectionServiceImpl implements CollectionService {
     }
     
     @Override
-    public List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size, String name) {
+    public List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size, String name) throws ResourceNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Collection> pageResult;
@@ -169,19 +165,18 @@ public class CollectionServiceImpl implements CollectionService {
         return pageResult.stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-
     @Override
     @Transactional
-    public void removeAdventureFromCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException {
+    public void removeAdventureFromCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException, ResourceNotFoundException {
         Collection collection = collectionRepository.findById(collectionId)
-                .orElseThrow(() -> new RuntimeException("Collection not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Collection not found"));
 
         if (!collection.getUser().getEmail().equals(email)) {
             throw new AccessDeniedException("Unauthorized");
         }
 
         Adventure adventure = adventureRepository.findById(adventureId)
-                .orElseThrow(() -> new RuntimeException("Adventure not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Adventure not found"));
 
         if (collection.getAdventures().contains(adventure)) {
             collection.getAdventures().remove(adventure);
@@ -192,31 +187,6 @@ public class CollectionServiceImpl implements CollectionService {
         collectionRepository.save(collection);
     }
   
-    @Transactional
-    @Override
-    public void addAdventureToCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException {
-        Collection collection = collectionRepository.findById(collectionId)
-                .orElseThrow(() -> new RuntimeException("Collection not found"));
-
-        if (!collection.getUser().getEmail().equals(email)) {
-            throw new AccessDeniedException("Unauthorized");
-        }
-
-        Adventure adventure = adventureRepository.findById(adventureId)
-                .orElseThrow(() -> new RuntimeException("Adventure not found"));
-        
-        if (!adventure.getUser().getEmail().equals(email) && adventure.getCollection()==null) {
-            throw new AccessDeniedException("Unauthorized");
-        }
-     
-        if (!collection.getAdventures().contains(adventure)) {
-            collection.getAdventures().add(adventure);
-            adventure.setCollection(collection);
-            adventureRepository.save(adventure);  
-            collectionRepository.save(collection); 
-        }
-    }
-    
     private CollectionDTO toDTO(Collection collection) {
         return CollectionDTO.builder()
                 .id(collection.getId())
@@ -231,5 +201,30 @@ public class CollectionServiceImpl implements CollectionService {
                                 .collect(Collectors.toList())
                 )
                 .build();
+    }
+
+    @Transactional
+    @Override
+    public void addAdventureToCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException, ResourceNotFoundException {
+        Collection collection = collectionRepository.findById(collectionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Collection not found"));
+
+        if (!collection.getUser().getEmail().equals(email)) {
+            throw new AccessDeniedException("Unauthorized");
+        }
+
+        Adventure adventure = adventureRepository.findById(adventureId)
+                .orElseThrow(() -> new ResourceNotFoundException("Adventure not found"));
+
+        if (!adventure.getUser().getEmail().equals(email) && adventure.getCollection()==null) {
+            throw new AccessDeniedException("Unauthorized");
+        }
+
+        if (!collection.getAdventures().contains(adventure)) {
+            collection.getAdventures().add(adventure);
+            adventure.setCollection(collection);
+            adventureRepository.save(adventure);
+            collectionRepository.save(collection);
+        }
     }
 }

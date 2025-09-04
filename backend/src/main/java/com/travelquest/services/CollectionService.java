@@ -11,14 +11,12 @@ import com.travelquest.dto.CollectionDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
 
 public interface CollectionService {
-	
     CollectionDTO createCollection(String email, CollectionDTO dto,MultipartFile image) throws ResourceNotFoundException, IOException;
-    CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws AccessDeniedException,IOException;
-    List<CollectionDTO> getCollectionsByUser(String email);
-    CollectionDTO getCollectionById(Long id, String email) throws AccessDeniedException;
-    void removeAdventureFromCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException ;
-    void deleteCollection(Long collectionId, String email) throws AccessDeniedException;
-    void addAdventureToCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException;
-    List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size, String name);
-
+    CollectionDTO updateCollection(Long id, CollectionDTO dto,MultipartFile image, String email) throws AccessDeniedException, IOException, ResourceNotFoundException;
+    List<CollectionDTO> getCollectionsByUser(String email) throws ResourceNotFoundException;
+    CollectionDTO getCollectionById(Long id, String email) throws AccessDeniedException, ResourceNotFoundException;
+    void removeAdventureFromCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException, ResourceNotFoundException;
+    void deleteCollection(Long collectionId, String email) throws AccessDeniedException, ResourceNotFoundException;
+    void addAdventureToCollection(Long collectionId, Long adventureId, String email) throws AccessDeniedException, ResourceNotFoundException;
+    List<CollectionDTO> getCollectionsByUserPaginated(String email, int page, int size, String name) throws ResourceNotFoundException;
 }

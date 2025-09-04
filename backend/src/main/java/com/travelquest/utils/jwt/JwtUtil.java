@@ -1,4 +1,4 @@
-package com.travelquest.utils;
+package com.travelquest.utils.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
