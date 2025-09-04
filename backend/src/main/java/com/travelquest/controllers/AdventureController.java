@@ -86,11 +86,6 @@ public class AdventureController {
         return ResponseEntity.ok(adventureService.getAdventureByIdAndEmail(id,auth.getName()));
     }
     
-    @GetMapping("dashboard")
-    public ResponseEntity<DashboardStatsDTO> getDashboardStats(Authentication auth) throws ResourceNotFoundException {
-    	return ResponseEntity.ok(adventureService.getAdventureStats(auth.getName()));
-    }
-    
     @GetMapping("/my")
     public ResponseEntity<List<AdventureDTO>> getAdventuresSorted(
             @RequestParam(defaultValue = "name") String sortBy,

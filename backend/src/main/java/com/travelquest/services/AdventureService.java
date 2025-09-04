@@ -18,7 +18,6 @@ public interface AdventureService {
     AdventureDTO getAdventureByIdAndEmail(Long id,String email) throws ResourceNotFoundException;
 	List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search) throws ResourceNotFoundException;
     List<AdventureDTO> getAdventuresByCollectionId(Long id,String email);
-	DashboardStatsDTO getAdventureStats(String email) throws ResourceNotFoundException;
 	List<AdventureDTO> getPublicAdventures();
 	AdventureDTO getPublicAdventure(Long id);
 }

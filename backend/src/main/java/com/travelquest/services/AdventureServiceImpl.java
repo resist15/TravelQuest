@@ -1,10 +1,8 @@
 package com.travelquest.services;
 
 import com.travelquest.dto.AdventureDTO;
-import com.travelquest.dto.DashboardStatsDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
-import com.travelquest.entity.DashboardStats;
 import com.travelquest.entity.User;
 import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.repositories.AdventureRepository;
@@ -21,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +32,7 @@ public class AdventureServiceImpl implements AdventureService {
     private final AdventureRepository adventureRepository;
     private final AdventureImageService adventureImageService;
     private final UserRepository userRepository;
+    private final DashboardService dashboardService;
     private final MapUtils mapUtils;
 
     @Override
@@ -58,7 +60,7 @@ public class AdventureServiceImpl implements AdventureService {
         Adventure savedAdventure = adventureRepository.save(adventure);
 
         adventureImageService.uploadImages(images, user.getId(), savedAdventure);
-        updateUserStats(user);
+        dashboardService.updateUserStats(user);
         return toDTO(savedAdventure);
     }
 
@@ -94,7 +96,7 @@ public class AdventureServiceImpl implements AdventureService {
         }
 
         Adventure updated = adventureRepository.save(adventure);
-        updateUserStats(user);
+        dashboardService.updateUserStats(user);
         return toDTO(updated);
     }
 
@@ -120,7 +122,7 @@ public class AdventureServiceImpl implements AdventureService {
         }
 
         adventureRepository.delete(adventure);
-        updateUserStats(user);
+        dashboardService.updateUserStats(user);
     }
 
     @Override
@@ -246,46 +248,6 @@ public class AdventureServiceImpl implements AdventureService {
 				.stream()
 				.map(this::toDTO)
 				.collect(Collectors.toList());
-	}
-
-    @Transactional
-	private void updateUserStats(User user) {
-	    List<Adventure> adventures = adventureRepository.findByUser(user);
-
-	    Set<String> cities = new HashSet<>();
-	    Set<String> regions = new HashSet<>();
-	    Set<String> countries = new HashSet<>();
-
-	    for (Adventure adv : adventures) {
-	        Map<String, String> geo = mapUtils.reverseGeocode(adv.getLatitude(), adv.getLongitude());
-
-	        if (geo.get("city") != null) cities.add(geo.get("city"));
-	        if (geo.get("region") != null) regions.add(geo.get("region"));
-	        if (geo.get("country") != null) countries.add(geo.get("country"));
-	    }
-
-	    DashboardStats stats = DashboardStats.builder()
-	        .totalAdventures(adventures.size())
-	        .totalCities(cities.size())
-	        .totalRegions(regions.size())
-	        .totalCountries(countries.size())
-	        .build();
-
-	    user.setDashboardStats(stats);
-	    userRepository.save(user);
-	}
-
-	@Override
-	public DashboardStatsDTO getAdventureStats(String email) throws ResourceNotFoundException {
-	    User user = userRepository.findByEmail(email)
-	            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-	    
-	    return DashboardStatsDTO.builder()
-	            .totalAdventures(user.getDashboardStats().getTotalAdventures())
-	            .totalCities(user.getDashboardStats().getTotalCities())
-	            .totalRegions(user.getDashboardStats().getTotalRegions())
-	            .totalCountries(user.getDashboardStats().getTotalCountries())
-	            .build();
 	}
 
 	@Override

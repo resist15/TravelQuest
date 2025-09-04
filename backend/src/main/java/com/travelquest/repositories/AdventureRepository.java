@@ -16,7 +16,6 @@ public interface AdventureRepository extends JpaRepository<Adventure, Long> {
     Page<Adventure> findByUser(User user, Pageable pageable);
     Page<Adventure> findByUserAndNameContainingIgnoreCase(User user, String location, Pageable pageable);
     List<Adventure> findByUserAndCollectionIsNull(User user);
-    List<Adventure> findAllByCollectionId(Long collectionId);
     List<Adventure> findByPublicVisibility(boolean publicVisibility);
     Adventure findByPublicVisibilityAndId(boolean publicVisibility,Long id);
     List<Adventure> findAllByCollectionIdAndCollectionUserEmail(Long collectionId, String email);
