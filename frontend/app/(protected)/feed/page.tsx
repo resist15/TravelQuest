@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import axios from "@/lib/axios"
-import { AdventureDTO } from "@/types/AdventureDTO"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,9 +9,10 @@ import { CalendarDays, MapPin } from "lucide-react"
 import Link from "next/link"
 import { Loader2 } from "lucide-react"
 import { motion } from "framer-motion";
+import { AdventurePublicDTO } from "@/types/AdventurePublicDTO"
 
 export default function AdventureFeedsPage() {
-    const [adventures, setAdventures] = useState<AdventureDTO[]>([])
+    const [adventures, setAdventures] = useState<AdventurePublicDTO[]>([])
     const [visibleCount, setVisibleCount] = useState(6)
     const [loading, setLoading] = useState(false)
 
@@ -96,7 +96,7 @@ export default function AdventureFeedsPage() {
                                     </CardHeader>
 
                                     <CardContent className="flex flex-col gap-2">
-                                        <p className="text-sm line-clamp-3">{adventure.description}</p>
+                                        <p className="text-sm line-clamp-2">{adventure.description}</p>
                                         <div className="flex flex-wrap gap-2">
                                             {adventure.tags.map((tag, index) => (
                                                 <Badge key={index} variant="outline">
@@ -104,8 +104,7 @@ export default function AdventureFeedsPage() {
                                                 </Badge>
                                             ))}
                                         </div>
-
-                                        <div className="mt-4 flex justify-between items-center">
+                                        <div className="mt-4 flex justify-between items-center pb-2">
                                             <Link href={`/feed/${adventure.id}`}>
                                                 <Button size="sm" variant="outline">
                                                     View Details
@@ -114,6 +113,9 @@ export default function AdventureFeedsPage() {
                                             <span className="text-sm font-semibold">
                                                 ⭐ {adventure.rating.toFixed(1)}
                                             </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            👤 By {adventure.author}
                                         </div>
                                     </CardContent>
                                 </Card>

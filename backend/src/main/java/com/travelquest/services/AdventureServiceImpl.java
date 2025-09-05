@@ -1,6 +1,7 @@
 package com.travelquest.services;
 
 import com.travelquest.dto.AdventureDTO;
+import com.travelquest.dto.AdventurePublicDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
 import com.travelquest.entity.User;
@@ -225,7 +226,30 @@ public class AdventureServiceImpl implements AdventureService {
                 .build();
     }
 
-	@Override
+    private AdventurePublicDTO toPublicDTO(Adventure adventure) {
+        return AdventurePublicDTO.builder()
+                .id(adventure.getId())
+                .name(adventure.getName())
+                .location(adventure.getLocation())
+                .latitude(adventure.getLatitude())
+                .longitude(adventure.getLongitude())
+                .tags(adventure.getTags())
+                .rating(adventure.getRating())
+                .description(adventure.getDescription())
+                .link(adventure.getLink())
+                .imageUrls(
+                        Objects.requireNonNullElse(adventure.getImages(), List.<AdventureImage>of())
+                                .stream()
+                                .map(AdventureImage::getUrl)
+                                .collect(Collectors.toList())
+                )
+                .createdAt(adventure.getCreatedAt())
+                .updatedAt(adventure.getUpdatedAt())
+                .author(adventure.getUser().getName())
+                .build();
+    }
+
+    @Override
 	public List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search) throws ResourceNotFoundException {
 		User user = userRepository.findByEmail(email)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -251,15 +275,15 @@ public class AdventureServiceImpl implements AdventureService {
 	}
 
 	@Override
-	public List<AdventureDTO> getPublicAdventures() {
+	public List<AdventurePublicDTO> getPublicAdventures() {
 	    List<Adventure> adventures = adventureRepository.findByPublicVisibility(true);
-		return adventures.stream().map(this::toDTO).collect(Collectors.toList());
+		return adventures.stream().map(this::toPublicDTO).collect(Collectors.toList());
 	}
-	
+
 	@Override
-	public AdventureDTO getPublicAdventure(Long id) {
+	public AdventurePublicDTO getPublicAdventure(Long id) {
 		Adventure adventure = adventureRepository.findByPublicVisibilityAndId(true,id);
-		return toDTO(adventure);
+		return toPublicDTO(adventure);
 	}
 
 }

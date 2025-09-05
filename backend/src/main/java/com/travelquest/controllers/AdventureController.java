@@ -2,6 +2,7 @@ package com.travelquest.controllers;
 
 import java.util.List;
 
+import com.travelquest.dto.AdventurePublicDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -100,14 +101,14 @@ public class AdventureController {
     }
     
     @GetMapping("/feed")
-    public ResponseEntity<List<AdventureDTO>> getPublicAdventures(Authentication auth){
-    	List<AdventureDTO> publicAdventures = adventureService.getPublicAdventures();
+    public ResponseEntity<List<AdventurePublicDTO>> getPublicAdventures(Authentication auth){
+    	List<AdventurePublicDTO> publicAdventures = adventureService.getPublicAdventures();
     	return ResponseEntity.ok(publicAdventures);
     }
 
     @GetMapping("/feed/{id}")
-    public ResponseEntity<AdventureDTO> getPublicAdventures(@PathVariable Long id){
-    	AdventureDTO publicAdventures = adventureService.getPublicAdventure(id);
+    public ResponseEntity<AdventurePublicDTO> getPublicAdventures(@PathVariable Long id){
+        AdventurePublicDTO publicAdventures = adventureService.getPublicAdventure(id);
     	return ResponseEntity.ok(publicAdventures);
     }
 }
