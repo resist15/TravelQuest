@@ -16,6 +16,7 @@ public class AdventureImageServiceImpl implements AdventureImageService{
 
     private final CloudinaryService cloudinaryService;
     private final AdventureImageRepository adventureImageRepository;
+
     @Override
     public void uploadImages(List<MultipartFile> images, Long userId, Adventure adventure) {
         if (images == null || images.isEmpty()) {
