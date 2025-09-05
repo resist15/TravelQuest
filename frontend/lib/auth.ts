@@ -8,5 +8,6 @@ export function isLoggedIn(): boolean {
 
 export function logout() {
   localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken")
   window.location.href = "/login";
 }

@@ -39,7 +39,6 @@ public class AuthenticationController {
     @PostMapping("/refresh")
     public AuthenticationResponse refresh(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
-
         if (refreshToken == null || !jwtUtil.validateToken(refreshToken)) {
             throw new RuntimeException("Invalid refresh token");
         }
@@ -49,7 +48,6 @@ public class AuthenticationController {
 
         String newAccessToken = jwtUtil.generateAccessToken(userDetails.getUsername());
         String newRefreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
-
         return new AuthenticationResponse(newAccessToken, newRefreshToken);
     }
 

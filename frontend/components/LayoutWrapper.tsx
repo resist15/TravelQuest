@@ -2,7 +2,6 @@
 
 import { ReactNode, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { jwtDecode } from "jwt-decode";
 
 const AUTH_ROUTES = ["/login", "/register"];
 
@@ -12,23 +11,13 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const isAuthPage = AUTH_ROUTES.includes(pathname);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
     if (!isAuthPage) {
-      if (!token) {
-        router.replace("/login");
-        return;
-      }
+      const token = localStorage.getItem("token");
+      const refreshToken = localStorage.getItem("refreshToken");
 
-      try {
-        const decoded: { exp: number } = jwtDecode(token);
-        if (decoded.exp * 1000 < Date.now()) {
-          localStorage.removeItem("token");
-          router.replace("/login");
-        }
-      } catch (e) {
-        console.error(e)
+      if (!token || !refreshToken) {
         localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
         router.replace("/login");
       }
     }

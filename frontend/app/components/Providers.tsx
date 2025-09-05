@@ -1,15 +1,13 @@
-// app/components/Providers.tsx
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ThemeProvider } from "./theme-provider";
 import Navbar from "./Navbar";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import { ToastProvider } from "@/components/ToastProvider";
-import { toast } from "react-toastify";
 import Footer from "./Footer";
+import { initAuth } from "@/lib/axios";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,38 +23,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    try {
-      const parts = token.split(".");
-      if (parts.length !== 3) throw new Error("Invalid token format");
-
-      const payload = JSON.parse(atob(parts[1]));
-      const now = Date.now() / 1000;
-
-      if (payload.exp < now) {
-        localStorage.removeItem("token");
-        router.replace("/login");
-        toast.info("Session expired. Please log in again.");
-        return;
-      }
-    } catch (err) {
-      console.error("JWT parsing failed:", err);
-      localStorage.removeItem("token");
+    const isValid = initAuth();
+    if (!isValid) {
       router.replace("/login");
       return;
     }
 
     setLoading(false);
-  }, [router, isProtected]);
+  }, [isProtected, router]);
 
   if (loading && isProtected) {
-    return null; // or show a loading spinner
+    return null; // you can replace with a spinner
   }
 
   return (

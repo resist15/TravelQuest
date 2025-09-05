@@ -1,18 +1,27 @@
-import axios from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { toast } from "react-toastify";
 
 type FailedRequest = {
-  resolve: (value?: string | PromiseLike<string | null> | null) => void;
+  resolve: (value?: string | null | PromiseLike<string | null>) => void;
   reject: (reason?: unknown) => void;
 };
 
+type RefreshResponse = {
+  token: string;
+  refreshToken: string;
+};
+
+interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
 const api = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_BASE_URL}`,
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Track ongoing refresh request (to avoid multiple refresh calls in parallel)
 let isRefreshing = false;
 let failedQueue: FailedRequest[] = [];
 
@@ -24,45 +33,40 @@ const processQueue = (error: unknown, token: string | null = null) => {
       prom.resolve(token);
     }
   });
-
   failedQueue = [];
 };
 
-// Attach token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Handle expired token
 api.interceptors.response.use(
   (res) => res,
-  async (err) => {
-    const originalRequest = err.config;
+  async (err: AxiosError) => {
+    const originalRequest = err.config as CustomAxiosRequestConfig;
     const requestUrl = originalRequest?.url || "";
     const isLoginRequest = requestUrl.endsWith("/api/auth/login");
 
-    // If unauthorized and not login call → try refresh
     if (err.response?.status === 401 && !isLoginRequest) {
       if (originalRequest._retry) {
-        // already retried once → logout
         logoutAndRedirect();
         return Promise.reject(err);
       }
 
-      // Prevent duplicate refresh calls
       if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
+  return new Promise<string | null>((resolve, reject) => {
+    const resolveTyped = resolve as (value: string | PromiseLike<string | null> | null | undefined) => void;
+    failedQueue.push({ resolve: resolveTyped, reject });
+  })
           .then((token) => {
-            originalRequest.headers["Authorization"] = "Bearer " + token;
+            if (token) {
+              originalRequest.headers["Authorization"] = "Bearer " + token;
+            }
             return api(originalRequest);
           })
-          .catch((error) => {
-            return Promise.reject(error);
-          });
+          .catch((error) => Promise.reject(error));
       }
 
       originalRequest._retry = true;
@@ -75,20 +79,17 @@ api.interceptors.response.use(
           return Promise.reject(err);
         }
 
-        const response = await axios.post(
+        const response = await axios.post<RefreshResponse>(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/refresh`,
           { refreshToken }
         );
 
-        const newAccessToken = response.data.accessToken;
-        const newRefreshToken = response.data.refreshToken;
+        const { token, refreshToken: newRefresh } = response.data;
 
-        // Save new tokens
-        localStorage.setItem("token", newAccessToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
-
-        api.defaults.headers.common["Authorization"] = "Bearer " + newAccessToken;
-        processQueue(null, newAccessToken);
+        localStorage.setItem("token", token);
+        localStorage.setItem("refreshToken", newRefresh);
+        api.defaults.headers.common["Authorization"] = "Bearer " + token;
+        processQueue(null, token);
 
         return api(originalRequest);
       } catch (refreshError) {
@@ -107,7 +108,30 @@ api.interceptors.response.use(
 function logoutAndRedirect() {
   localStorage.removeItem("token");
   localStorage.removeItem("refreshToken");
+  toast.error("Your session has expired. Please log in again.");
   window.location.href = "/login";
+}
+
+export async function initAuth() {
+  const token = localStorage.getItem("token");
+  const refreshToken = localStorage.getItem("refreshToken");
+
+  if (!token || !refreshToken) return;
+
+  try {
+    const { exp } = JSON.parse(atob(token.split(".")[1]));
+    if (exp * 1000 < Date.now()) {
+      const res = await axios.post<RefreshResponse>(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/refresh`,
+        { refreshToken }
+      );
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("refreshToken", res.data.refreshToken);
+    }
+  } catch (e) {
+    console.error("Token parse error:", e);
+    logoutAndRedirect();
+  }
 }
 
 export default api;
