@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class AdventureDTO {
+public class AdventurePublicDTO {
     private Long id;
     private String name;
     private String location;
@@ -16,11 +16,10 @@ public class AdventureDTO {
     private String description;
     private double rating;
     private String link;
-    private boolean publicVisibility;
     private double latitude;
     private double longitude;
     private List<String> imageUrls;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Long collectionId;
+    private String author;
 }

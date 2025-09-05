@@ -11,7 +11,6 @@ import AdventureMap from "@/components/AdventureMap";
 import axios from "@/lib/axios";
 import { format } from "date-fns";
 import clsx from "clsx";
-import { AdventureDTO } from "@/types/AdventureDTO";
 import { toast } from "react-toastify";
 import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
@@ -21,12 +20,13 @@ import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
 import { NextJsImage, NextJsThumbnail } from "@/components/NextJsImage";
 import dynamic from "next/dynamic";
 import { isAxiosError } from "axios";
+import { AdventurePublicDTO } from "@/types/AdventurePublicDTO";
 
 export default function AdventureDetails() {
   const Lightbox = dynamic(() => import("yet-another-react-lightbox"), { ssr: false });
 
   const { id } = useParams();
-  const [adventure, setAdventure] = useState<AdventureDTO | null>(null);
+  const [adventure, setAdventure] = useState<AdventurePublicDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -40,6 +40,7 @@ export default function AdventureDetails() {
         setAdventure(res.data);
         setBrokenImageUrls(new Set());
         setCoordinates([res.data.longitude, res.data.latitude]);
+        console.log(adventure);
       } catch (err: unknown) {
         let msg = "Failed fetching adventure";
         if (isAxiosError(err)) {
@@ -77,9 +78,12 @@ export default function AdventureDetails() {
     >
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-primary mb-1">✈️ {adventure.name}</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-4xl font-bold text-primary mb-2">✈️ {adventure.name}</h1>
+          <p className="text-sm text-muted-foreground pb-1">
             Created at: {format(new Date(adventure.createdAt), "dd MMM yyyy, hh:mm a")}
+          </p>
+          <p className="text-sm text-muted-foreground font-semibold">
+            👤 -{'>'} {adventure.author}
           </p>
         </div>
         <div className="flex flex-wrap gap-2 justify-start sm:justify-end">

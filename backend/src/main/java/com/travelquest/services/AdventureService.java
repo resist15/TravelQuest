@@ -2,10 +2,10 @@ package com.travelquest.services;
 
 import java.util.List;
 
+import com.travelquest.dto.AdventurePublicDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
-import com.travelquest.dto.DashboardStatsDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
 
 public interface AdventureService {
@@ -18,6 +18,6 @@ public interface AdventureService {
     AdventureDTO getAdventureByIdAndEmail(Long id,String email) throws ResourceNotFoundException;
 	List<AdventureDTO> getAdventuresSorted(String email, String sortBy, String order, int page, int size, String search) throws ResourceNotFoundException;
     List<AdventureDTO> getAdventuresByCollectionId(Long id,String email);
-	List<AdventureDTO> getPublicAdventures();
-	AdventureDTO getPublicAdventure(Long id);
+	List<AdventurePublicDTO> getPublicAdventures();
+	AdventurePublicDTO getPublicAdventure(Long id);
 }
