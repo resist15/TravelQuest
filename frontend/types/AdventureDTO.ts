@@ -11,4 +11,6 @@ export interface AdventureDTO {
   longitude: number;
   imageUrls: string[];
   createdAt: string;
+  likesCount: number;
+  likedByCurrentUser: boolean;
 }

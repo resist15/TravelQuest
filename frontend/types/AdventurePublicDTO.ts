@@ -11,4 +11,6 @@ export interface AdventurePublicDTO {
   imageUrls: string[];
   createdAt: string;
   author: string;
+  likesCount: number;
+  likedByCurrentUser: boolean;
 }

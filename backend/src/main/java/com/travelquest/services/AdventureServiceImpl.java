@@ -4,8 +4,10 @@ import com.travelquest.dto.AdventureDTO;
 import com.travelquest.dto.AdventurePublicDTO;
 import com.travelquest.entity.Adventure;
 import com.travelquest.entity.AdventureImage;
+import com.travelquest.entity.AdventureLike;
 import com.travelquest.entity.User;
 import com.travelquest.exceptions.ResourceNotFoundException;
+import com.travelquest.repositories.AdventureLikeRepository;
 import com.travelquest.repositories.AdventureRepository;
 import com.travelquest.repositories.UserRepository;
 import com.travelquest.utils.map.MapUtils;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +35,7 @@ public class AdventureServiceImpl implements AdventureService {
 
     private final AdventureRepository adventureRepository;
     private final AdventureImageService adventureImageService;
+    private final AdventureLikeRepository adventureLikeRepo;
     private final UserRepository userRepository;
     private final DashboardService dashboardService;
     private final MapUtils mapUtils;
@@ -198,8 +202,23 @@ public class AdventureServiceImpl implements AdventureService {
 
         return this.toDTO(adventure);
     }
-    
+
     private AdventureDTO toDTO(Adventure adventure) {
+        long likesCount = adventureLikeRepo.countByAdventureId(adventure.getId());
+
+        boolean likedByCurrentUser = false;
+        try {
+            String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            if (currentEmail != null) {
+                User currentUser = userRepository.findByEmail(currentEmail).orElse(null);
+                if (currentUser != null) {
+                    likedByCurrentUser = adventureLikeRepo.existsByAdventureIdAndUserId(adventure.getId(), currentUser.getId());
+                }
+            }
+        } catch (Exception e) {
+            likedByCurrentUser = false;
+        }
+
         return AdventureDTO.builder()
                 .id(adventure.getId())
                 .name(adventure.getName())
@@ -208,25 +227,43 @@ public class AdventureServiceImpl implements AdventureService {
                 .longitude(adventure.getLongitude())
                 .collectionId(
                         adventure.getCollection() != null
-                            ? adventure.getCollection().getId()
-                            : null)
+                                ? adventure.getCollection().getId()
+                                : null)
                 .tags(adventure.getTags())
                 .publicVisibility(adventure.isPublicVisibility())
                 .rating(adventure.getRating())
                 .description(adventure.getDescription())
                 .link(adventure.getLink())
                 .imageUrls(
-                    Objects.requireNonNullElse(adventure.getImages(), List.<AdventureImage>of())
-                           .stream()
-                           .map(AdventureImage::getUrl)
-                           .collect(Collectors.toList())
+                        Objects.requireNonNullElse(adventure.getImages(), List.<AdventureImage>of())
+                                .stream()
+                                .map(AdventureImage::getUrl)
+                                .collect(Collectors.toList())
                 )
                 .createdAt(adventure.getCreatedAt())
-				        .updatedAt(adventure.getUpdatedAt())
+                .updatedAt(adventure.getUpdatedAt())
+                .likedByCurrentUser(likedByCurrentUser)
+                .likesCount(likesCount)
                 .build();
     }
 
     private AdventurePublicDTO toPublicDTO(Adventure adventure) {
+        long likesCount = adventureLikeRepo.countByAdventureId(adventure.getId());
+
+        boolean likedByCurrentUser = false;
+        try {
+            String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            if (currentEmail != null) {
+                User currentUser = userRepository.findByEmail(currentEmail).orElse(null);
+                if (currentUser != null) {
+                    likedByCurrentUser = adventureLikeRepo.existsByAdventureIdAndUserId(adventure.getId(), currentUser.getId());
+                }
+            }
+        } catch (Exception e) {
+            likedByCurrentUser = false;
+        }
+
+        System.out.println(adventure.getId() + " " + likedByCurrentUser);
         return AdventurePublicDTO.builder()
                 .id(adventure.getId())
                 .name(adventure.getName())
@@ -246,6 +283,8 @@ public class AdventureServiceImpl implements AdventureService {
                 .createdAt(adventure.getCreatedAt())
                 .updatedAt(adventure.getUpdatedAt())
                 .author(adventure.getUser().getName())
+                .likedByCurrentUser(likedByCurrentUser)
+                .likesCount(likesCount)
                 .build();
     }
 
@@ -285,5 +324,37 @@ public class AdventureServiceImpl implements AdventureService {
 		Adventure adventure = adventureRepository.findByPublicVisibilityAndId(true,id);
 		return toPublicDTO(adventure);
 	}
+
+    @Transactional
+    public void likeAdventure(Long adventureId, String email) throws ResourceNotFoundException {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Adventure adventure = adventureRepository.findById(adventureId).orElseThrow(() -> new ResourceNotFoundException("Adventure not found"));
+
+        boolean alreadyLiked = adventureLikeRepo.existsByAdventureIdAndUserId(adventureId, user.getId());
+        if (alreadyLiked) {
+            throw new IllegalStateException("User already liked this adventure");
+        }
+
+        AdventureLike like = new AdventureLike();
+        like.setAdventure(adventure);
+        like.setUser(user);
+        adventureLikeRepo.save(like);
+    }
+
+    @Transactional
+    public void unlikeAdventure(Long adventureId, String email) throws ResourceNotFoundException {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!adventureLikeRepo.existsByAdventureIdAndUserId(adventureId, user.getId())) {
+            throw new IllegalStateException("User has not liked this adventure");
+        }
+
+        adventureLikeRepo.deleteByAdventureIdAndUserId(adventureId, user.getId());
+    }
+
+    public Long getLikesCount(Long adventureId) {
+        return adventureLikeRepo.countByAdventureId(adventureId);
+    }
 
 }

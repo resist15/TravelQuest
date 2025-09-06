@@ -22,4 +22,6 @@ public class AdventurePublicDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String author;
+    private long likesCount;
+    private boolean likedByCurrentUser;
 }

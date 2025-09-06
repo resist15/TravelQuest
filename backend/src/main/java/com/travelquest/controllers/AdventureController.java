@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.travelquest.dto.AdventureDTO;
-import com.travelquest.dto.DashboardStatsDTO;
 import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.services.AdventureService;
 
@@ -111,4 +110,22 @@ public class AdventureController {
         AdventurePublicDTO publicAdventures = adventureService.getPublicAdventure(id);
     	return ResponseEntity.ok(publicAdventures);
     }
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Void> likeAdventure(@PathVariable Long id, Authentication auth) throws ResourceNotFoundException {
+        adventureService.likeAdventure(id, auth.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/like")
+    public ResponseEntity<Void> unlikeAdventure(@PathVariable Long id, Authentication auth) throws ResourceNotFoundException {
+        adventureService.unlikeAdventure(id, auth.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/likes")
+    public ResponseEntity<Long> getLikesCount(@PathVariable Long id) {
+        return ResponseEntity.ok(adventureService.getLikesCount(id));
+    }
+
 }

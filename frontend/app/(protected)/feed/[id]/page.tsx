@@ -21,6 +21,7 @@ import { NextJsImage, NextJsThumbnail } from "@/components/NextJsImage";
 import dynamic from "next/dynamic";
 import { isAxiosError } from "axios";
 import { AdventurePublicDTO } from "@/types/AdventurePublicDTO";
+import LikeButton from "@/components/LikeButton";
 
 export default function AdventureDetails() {
   const Lightbox = dynamic(() => import("yet-another-react-lightbox"), { ssr: false });
@@ -40,7 +41,7 @@ export default function AdventureDetails() {
         setAdventure(res.data);
         setBrokenImageUrls(new Set());
         setCoordinates([res.data.longitude, res.data.latitude]);
-        console.log(adventure);
+        console.log(res.data.likedByCurrentUser);
       } catch (err: unknown) {
         let msg = "Failed fetching adventure";
         if (isAxiosError(err)) {
@@ -113,9 +114,16 @@ export default function AdventureDetails() {
       </motion.div>
 
       <div className="flex justify-between items-center mt-4">
-        <p className="text-muted-foreground flex items-center gap-2">
-          <MapPin className="w-4 h-4" /> {adventure.location}
-        </p>
+        <div className="flex gap-4">
+          <LikeButton
+            adventureId={adventure.id}
+            initialLikes={adventure.likesCount}
+            initiallyLiked={adventure.likedByCurrentUser}
+          />
+          <p className="text-muted-foreground flex items-center gap-2">
+            <MapPin className="w-4 h-4" /> {adventure.location}
+          </p>
+        </div>
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
             <motion.div

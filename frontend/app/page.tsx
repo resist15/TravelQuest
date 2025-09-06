@@ -69,7 +69,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
 <main className="px-4 sm:px-6 py-4 max-w-7xl mx-auto">
-<h1 className="text-4xl sm:text-5xl font-semibold mb-2">Welcome back, {userName}!</h1>
+<h1 className="text-4xl sm:text-5xl font-semibold mb-2">Welcome, {userName}!</h1>
         <p className="text-muted-foreground mt-1 mb-8">
           Your gateway to memories, moments, and mapped milestones.
         </p>
