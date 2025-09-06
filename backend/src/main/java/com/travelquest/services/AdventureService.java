@@ -20,4 +20,7 @@ public interface AdventureService {
     List<AdventureDTO> getAdventuresByCollectionId(Long id,String email);
 	List<AdventurePublicDTO> getPublicAdventures();
 	AdventurePublicDTO getPublicAdventure(Long id);
+    Long getLikesCount(Long id);
+    void unlikeAdventure(Long id, String name) throws ResourceNotFoundException;
+    void likeAdventure(Long id, String name) throws ResourceNotFoundException;
 }

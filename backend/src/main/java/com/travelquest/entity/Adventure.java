@@ -2,7 +2,9 @@ package com.travelquest.entity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.locationtech.jts.geom.Point;
 
@@ -75,4 +77,7 @@ public class Adventure {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collection_id", nullable=true)
     private Collection collection;
+
+    @OneToMany(mappedBy = "adventure", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AdventureLike> likes = new HashSet<>();
 }

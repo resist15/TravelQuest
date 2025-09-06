@@ -110,9 +110,14 @@ export default function AdventureFeedsPage() {
                                                     View Details
                                                 </Button>
                                             </Link>
-                                            <span className="text-sm font-semibold">
-                                                ⭐ {adventure.rating.toFixed(1)}
-                                            </span>
+                                            <div className="flex gap-2 items-center justify-between">
+                                                <span className="text-sm font-semibold">
+                                                    ⭐ {adventure.rating}
+                                                </span>
+                                                <span className="text-sm font-semibold">
+                                                    ❤️ {adventure.likesCount}
+                                                </span>
+                                            </div>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             👤 By {adventure.author}
