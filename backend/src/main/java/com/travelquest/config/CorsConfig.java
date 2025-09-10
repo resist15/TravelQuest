@@ -13,7 +13,7 @@ public class CorsConfig implements WebMvcConfigurer {
                     "http://localhost:3000",
 		    "https://travelq.vercel.app"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }

@@ -263,7 +263,6 @@ public class AdventureServiceImpl implements AdventureService {
             likedByCurrentUser = false;
         }
 
-        System.out.println(adventure.getId() + " " + likedByCurrentUser);
         return AdventurePublicDTO.builder()
                 .id(adventure.getId())
                 .name(adventure.getName())
