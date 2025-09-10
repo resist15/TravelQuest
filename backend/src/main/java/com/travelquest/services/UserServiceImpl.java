@@ -1,19 +1,19 @@
 package com.travelquest.services;
 
-import java.time.LocalDateTime;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
 import com.travelquest.dto.UserRequestDTO;
 import com.travelquest.dto.UserResponseDTO;
 import com.travelquest.entity.User;
 import com.travelquest.enums.Role;
-
+import com.travelquest.exceptions.ResourceNotFoundException;
 import com.travelquest.repositories.UserRepository;
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +21,13 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     @Transactional
-    public UserResponseDTO registerUser(UserRequestDTO dto) {
+    public UserResponseDTO registerUser(UserRequestDTO dto) throws ResourceNotFoundException {
         if (userRepository.existsByEmail(dto.getEmail())) {
-            throw new RuntimeException("User already exists with email: " + dto.getEmail());
+            throw new ResourceNotFoundException("User already exists with email: " + dto.getEmail());
         }
 
         User user = User.builder()
@@ -42,10 +43,38 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDTO getUserByEmail(String email) {
+    @Transactional
+    public void updateName(String username, String newName) throws ResourceNotFoundException {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setName(newName);
+        userRepository.save(user);
+    }
+
+    @Override
+    public UserResponseDTO getUserByEmail(String email) throws ResourceNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
         return toDTO(user);
+    }
+
+    @Override
+    @Transactional
+    public void setProfilePicture(MultipartFile image, String email) throws ResourceNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String url = "";
+        if (image == null || image.isEmpty()) {
+            return;
+        }
+        try {
+            url = cloudinaryService.uploadImage(image,user.getId().toString(),user.getId().toString());
+        } catch (IOException e) {
+            throw new RuntimeException("Image upload failed", e);
+        }
+        user.setProfilePicture(url);
+        userRepository.save(user);
     }
 
     private UserResponseDTO toDTO(User user) {

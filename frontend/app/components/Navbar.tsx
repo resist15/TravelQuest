@@ -25,6 +25,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [userName, setUserName] = useState<string>("User");
+  const [profilePicture, setProfilePicture] = useState<string>();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -40,6 +41,7 @@ export default function Navbar() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserName(userRes.data.name || "User");
+        setProfilePicture(userRes.data.profilePicture);
       } catch (err: unknown) { // Type 'err' as unknown
         if (err instanceof AxiosError) { // Check if it's an AxiosError
           console.error("Axios Error:", err.message);
@@ -56,7 +58,7 @@ export default function Navbar() {
   }, [router]);
 
   const navLinks = [
-    { href: "/feed", icon: <BookCopy className="w-4 h-4"/>, label: "Feed" },
+    { href: "/feed", icon: <BookCopy className="w-4 h-4" />, label: "Feed" },
     { href: "/adventures", icon: <Compass className="w-4 h-4" />, label: "Adventures" },
     { href: "/collections", icon: <Layers className="w-4 h-4" />, label: "Collections" },
     { href: "/map", icon: <Map className="w-4 h-4" />, label: "Map" },
@@ -112,13 +114,13 @@ export default function Navbar() {
           </motion.div> */}
 
           <Link href="/userdetails">
-  <motion.div whileHover={{ scale: 1.1 }} className="cursor-pointer">
-    <Avatar>
-      <AvatarImage src="/avatar.png" alt="user" />
-      <AvatarFallback>{userName[0]}</AvatarFallback>
-    </Avatar>
-  </motion.div>
-</Link>
+            <motion.div whileHover={{ scale: 1.1 }} className="cursor-pointer">
+              <Avatar>
+                <AvatarImage src={profilePicture} alt="user" />
+                <AvatarFallback>{userName[0]}</AvatarFallback>
+              </Avatar>
+            </motion.div>
+          </Link>
 
 
           <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">

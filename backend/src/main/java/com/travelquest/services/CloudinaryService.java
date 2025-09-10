@@ -25,14 +25,6 @@ public class CloudinaryService {
         return uploadResult.get("secure_url").toString();
     }
 
-    public List<String> uploadImages(List<MultipartFile> files, String userId, String adventureId) throws IOException {
-        List<String> urls = new ArrayList<>();
-        for (MultipartFile file : files) {
-            urls.add(uploadImage(file, userId, adventureId));
-        }
-        return urls;
-    }
-
     public void deleteImage(String url) {
         try {
             String publicId = extractPublicId(url);
@@ -52,13 +44,6 @@ public class CloudinaryService {
         } catch (Exception e) {
             System.err.println("Error deleting image from Cloudinary:");
             e.printStackTrace();
-        }
-    }
-
-
-    public void deleteImages(List<String> urls) {
-        for (String url : urls) {
-            deleteImage(url);
         }
     }
 

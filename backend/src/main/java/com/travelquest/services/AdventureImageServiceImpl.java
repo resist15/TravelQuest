@@ -12,7 +12,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class AdventureImageServiceImpl implements AdventureImageService{
+public class AdventureImageServiceImpl implements AdventureImageService {
 
     private final CloudinaryService cloudinaryService;
     private final AdventureImageRepository adventureImageRepository;
