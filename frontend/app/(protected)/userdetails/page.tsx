@@ -7,7 +7,7 @@ import { UserRound, Mail, Calendar, Upload, Pencil } from "lucide-react";
 import { AxiosError } from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // shadcn input
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import Cropper from "react-easy-crop";
+import Cropper, { Area } from "react-easy-crop";
 
 interface UserInfo {
   name: string;
@@ -36,7 +36,7 @@ export default function UserDetailsPage() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const router = useRouter();
 
@@ -49,10 +49,10 @@ export default function UserDetailsPage() {
 
     const fetchUser = async () => {
       try {
-        const res = await api.get("/api/users/me");
+        const res = await api.get<UserInfo>("/api/users/me");
         setUser(res.data);
         setNameInput(res.data.name);
-      } catch (err) {
+      } catch (err: unknown) {
         if (err instanceof AxiosError && err.response?.status === 401) {
           router.push("/login");
         } else {
@@ -66,9 +66,12 @@ export default function UserDetailsPage() {
     fetchUser();
   }, [router]);
 
-  const onCropComplete = useCallback((_: any, croppedPixels: any) => {
-    setCroppedAreaPixels(croppedPixels);
-  }, []);
+  const onCropComplete = useCallback(
+    (_: Area, croppedPixels: Area) => {
+      setCroppedAreaPixels(croppedPixels);
+    },
+    []
+  );
 
   const getCroppedImage = async (): Promise<Blob | null> => {
     if (!imageSrc || !croppedAreaPixels) return null;
@@ -125,7 +128,7 @@ export default function UserDetailsPage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const res = await api.get("/api/users/me");
+      const res = await api.get<UserInfo>("/api/users/me");
       setUser(res.data);
       setOpenDialog(false);
     } catch (err) {
@@ -206,7 +209,7 @@ export default function UserDetailsPage() {
         </div>
       </div>
 
-      {/* Name Update with Pencil */}
+      {/* Name Update */}
       <div className="flex items-center gap-2">
         <span className="font-medium">Name:</span>
         {!editingName ? (
