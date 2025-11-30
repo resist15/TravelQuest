@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 const AUTH_ROUTES = ["/login", "/register"];
@@ -10,18 +10,28 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const router = useRouter();
   const isAuthPage = AUTH_ROUTES.includes(pathname);
 
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
-    if (!isAuthPage) {
-      const token = localStorage.getItem("token");
-      const refreshToken = localStorage.getItem("refreshToken");
-
-      if (!token || !refreshToken) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        router.replace("/login");
-      }
+    if (isAuthPage) {
+      setReady(true);
+      return;
     }
-  }, [pathname, router, isAuthPage]);
 
+    const token = localStorage.getItem("token");
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    if (!token || !refreshToken) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      router.replace("/login");
+      return;
+    }
+
+    setReady(true);
+  }, [pathname, isAuthPage, router]);
+
+  if (!ready) return null;
+  
   return <>{children}</>;
 }

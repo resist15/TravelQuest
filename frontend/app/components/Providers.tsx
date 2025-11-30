@@ -38,12 +38,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      {!hideNavbar && <Navbar />}
-      <main className="max-w-7xl mx-auto px-4 pt-6">
-        {isProtected ? <LayoutWrapper>{children}</LayoutWrapper> : children}
-      </main>
-      <ToastProvider />
-      {!hideNavbar && <Footer />}
+      <LayoutWrapper>
+        {!hideNavbar && <Navbar />}
+        <main className="max-w-7xl mx-auto px-4 pt-6">
+          {isProtected ? <>{children}</> : children}
+        </main>
+        <ToastProvider />
+        {!hideNavbar && <Footer />}
+      </LayoutWrapper>
     </ThemeProvider>
   );
 }
